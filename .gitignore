@@ -6,9 +6,15 @@
 /dist
 /.next/
 /out/
+**/dist/
 
 # Prisma generated client
 **/generated/
+**/prisma/migrations/
+
+# Database
+*.db
+*.sqlite
 
 # Logs
 logs
@@ -22,6 +28,7 @@ lerna-debug.log*
 # Local development
 .env*.local
 .env
+**/.env
 
 # IDEs and editors
 .idea
