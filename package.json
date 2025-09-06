@@ -10,7 +10,13 @@
     "prepare": "husky",
     "db:up": "docker compose up -d postgres",
     "db:down": "docker compose down",
-    "db:logs": "docker compose logs postgres"
+    "db:logs": "docker compose logs postgres",
+    "db:generate": "pnpm --filter api db:generate",
+    "db:push": "pnpm --filter api db:push",
+    "db:migrate": "pnpm --filter api db:migrate",
+    "db:reset": "pnpm --filter api db:reset",
+    "db:studio": "pnpm --filter api db:studio",
+    "db:seed": "pnpm --filter api db:seed"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
