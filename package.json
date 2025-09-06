@@ -7,7 +7,10 @@
     "start": "pnpm -r start",
     "lint": "pnpm -r lint",
     "test": "pnpm -r test",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:up": "docker compose up -d postgres",
+    "db:down": "docker compose down",
+    "db:logs": "docker compose logs postgres"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
