@@ -7,6 +7,9 @@
 /.next/
 /out/
 
+# Prisma generated client
+**/generated/
+
 # Logs
 logs
 *.log
