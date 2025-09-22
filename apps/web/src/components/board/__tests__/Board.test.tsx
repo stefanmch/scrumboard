@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Board } from '../Board'
 
@@ -169,8 +169,8 @@ describe('Board', () => {
     it('should create draft story when add button is clicked', async () => {
       const user = userEvent.setup()
 
-      // Find and click an "Add Story" button (there should be one for each column)
-      const addButtons = screen.getAllByText(/Add/i)
+      // Find and click an "Add new story" button (there should be one for each column)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0]) // Click first add button (TODO column)
 
       // Should open the edit modal with a draft story
@@ -191,7 +191,7 @@ describe('Board', () => {
       })
       mockStoriesApi.create.mockResolvedValue(newStory)
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -226,7 +226,7 @@ describe('Board', () => {
     it('should remove draft story when modal is closed without saving', async () => {
       const user = userEvent.setup()
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -259,16 +259,19 @@ describe('Board', () => {
       // Note: The actual implementation might require hovering first to show edit button
       const storyCard = screen.getByText('TODO Story')
 
-      // Simulate hover to show edit button
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      // Find the parent story card container
+      const storyContainer = storyCard.closest('.group')!
 
-      // Now click edit button if it appears
+      // Simulate hover to show edit button
+      fireEvent.mouseEnter(storyContainer)
+
+      // Now find the edit button within this specific story
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
@@ -553,7 +556,7 @@ describe('Board', () => {
         expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -586,7 +589,7 @@ describe('Board', () => {
       })
 
       // Create a draft story
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
