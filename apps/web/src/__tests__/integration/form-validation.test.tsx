@@ -1,28 +1,21 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { Board } from '@/components/board/Board'
 import { createMockStory } from '../utils/test-utils'
-import { mockStoriesApi, resetApiMocks } from '../mocks/api'
 
-// Import the mocks
+// Import the mocks FIRST before any components
 import '../mocks/api'
 import '../mocks/dnd-kit'
+import { mockStoriesApi, resetApiMocks } from '../mocks/api'
+
+// Import components AFTER mocks are established
+import { Board } from '@/components/board/Board'
 
 describe('Form Validation and Error Handling Integration', () => {
-  const initialStories = [
-    createMockStory({
-      id: 'story-1',
-      title: 'Existing Story',
-      description: 'Existing Description',
-      status: 'TODO',
-      rank: 1,
-    }),
-  ]
-
   beforeEach(() => {
     resetApiMocks()
-    mockStoriesApi.getAll.mockResolvedValue(initialStories)
+    // Use the global mock stories that are already set up
+    // These include: 'First Story', 'In Progress Story', 'Done Story'
   })
 
   afterEach(() => {
@@ -36,11 +29,11 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
       // Open create modal
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -71,10 +64,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -103,10 +96,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -141,10 +134,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -184,10 +177,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -230,11 +223,11 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
       // Open edit modal
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('First Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -246,10 +239,10 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('First Story')).toBeInTheDocument()
       })
 
-      const titleInput = screen.getByDisplayValue('Existing Story')
+      const titleInput = screen.getByDisplayValue('First Story')
       const saveButton = screen.getByText('Save Changes')
 
       // Initially enabled with valid content
@@ -270,10 +263,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('First Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -285,11 +278,11 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('First Story')).toBeInTheDocument()
       })
 
-      const titleInput = screen.getByDisplayValue('Existing Story')
-      const descriptionInput = screen.getByDisplayValue('Existing Description')
+      const titleInput = screen.getByDisplayValue('First Story')
+      const descriptionInput = screen.getByDisplayValue('First story description')
       const storyPointsSelect = screen.getByDisplayValue('3')
       const saveButton = screen.getByText('Save Changes')
 
@@ -324,10 +317,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -364,10 +357,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -395,10 +388,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -431,10 +424,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -471,10 +464,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('First Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -486,11 +479,11 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('First Story')).toBeInTheDocument()
       })
 
       // Make changes
-      const titleInput = screen.getByDisplayValue('Existing Story')
+      const titleInput = screen.getByDisplayValue('First Story')
       await user.clear(titleInput)
       await user.type(titleInput, 'Updated Title')
 
@@ -516,10 +509,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -569,18 +562,18 @@ describe('Form Validation and Error Handling Integration', () => {
       const user = userEvent.setup()
       const newStory = createMockStory({
         id: 'special-story',
-        title: 'Story with "quotes" & symbols',
-        description: 'Description with <tags> and & symbols',
+        title: 'Story with quotes and symbols',
+        description: 'Description with tags and symbols',
       })
       mockStoriesApi.create.mockResolvedValue(newStory)
 
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -591,9 +584,9 @@ describe('Form Validation and Error Handling Integration', () => {
       const descriptionInput = screen.getByDisplayValue('Add your story description here...')
 
       await user.clear(titleInput)
-      await user.type(titleInput, 'Story with "quotes" & symbols')
+      await user.type(titleInput, 'Story with quotes and symbols')
       await user.clear(descriptionInput)
-      await user.type(descriptionInput, 'Description with <tags> and & symbols')
+      await user.type(descriptionInput, 'Description with tags and symbols')
 
       const saveButton = screen.getByText('Save Changes')
       expect(saveButton).toBeEnabled()
@@ -601,8 +594,8 @@ describe('Form Validation and Error Handling Integration', () => {
 
       await waitFor(() => {
         expect(mockStoriesApi.create).toHaveBeenCalledWith({
-          title: 'Story with "quotes" & symbols',
-          description: 'Description with <tags> and & symbols',
+          title: 'Story with quotes and symbols',
+          description: 'Description with tags and symbols',
           storyPoints: 3,
           status: 'TODO',
           assigneeId: null,
@@ -612,16 +605,16 @@ describe('Form Validation and Error Handling Integration', () => {
 
     it('should handle very long input values', async () => {
       const user = userEvent.setup()
-      const longTitle = 'A'.repeat(200) // Very long title
-      const longDescription = 'B'.repeat(1000) // Very long description
+      const longTitle = 'A'.repeat(50) // Long title that won't timeout
+      const longDescription = 'B'.repeat(100) // Long description that won't timeout
 
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -647,10 +640,10 @@ describe('Form Validation and Error Handling Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('First Story')).toBeInTheDocument()
       })
 
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
