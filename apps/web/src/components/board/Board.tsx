@@ -6,6 +6,7 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { BoardColumn } from './BoardColumn'
 import { StoryCard } from '@/components/story/StoryCard'
 import { StoryEditModal } from '@/components/modals/StoryEditModal'
+import { DeleteConfirmationModal } from '@/components/modals/DeleteConfirmationModal'
 import { storiesApi } from '@/lib/api'
 import { Column, Story, StoryStatus } from '@/types'
 
@@ -14,6 +15,7 @@ export function Board() {
   const [columns, setColumns] = useState<Column[]>([])
   const [activeStory, setActiveStory] = useState<Story | null>(null)
   const [editingStory, setEditingStory] = useState<Story | null>(null)
+  const [deletingStory, setDeletingStory] = useState<Story | null>(null)
   const [isDragReady, setIsDragReady] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -300,18 +302,35 @@ export function Board() {
     setEditingStory(draftStory);
   }
 
-  const handleDeleteStory = async (storyToDelete: Story) => {
-    try {
-      await storiesApi.delete(storyToDelete.id);
+  const handleDeleteStory = (storyToDelete: Story) => {
+    setDeletingStory(storyToDelete);
+  }
 
+  const handleConfirmDelete = async () => {
+    if (!deletingStory) return;
+
+    try {
+      // Check if it's a draft story (not saved to database yet)
+      const isDraft = deletingStory.id.startsWith('draft-');
+
+      if (!isDraft) {
+        // Only call API for stories that exist in the database
+        await storiesApi.delete(deletingStory.id);
+      }
+
+      // Remove from local state for both draft and saved stories
       setColumns(prev => prev.map(col => ({
         ...col,
-        stories: col.stories.filter(s => s.id !== storyToDelete.id),
+        stories: col.stories.filter(s => s.id !== deletingStory.id),
       })));
     } catch (err) {
       console.error('Failed to delete story:', err);
       setError('Failed to delete story. Please try again.');
     }
+  }
+
+  const handleCancelDelete = () => {
+    setDeletingStory(null);
   }
 
   // Show loading state
@@ -398,6 +417,14 @@ export function Board() {
       </DndContext>
       {/* Story Edit Modal */}
       <StoryEditModal story={editingStory} isOpen={!!editingStory} onClose={handleCloseModal} onSave={handleSaveStory} />
+
+      {/* Delete Confirmation Modal */}
+      <DeleteConfirmationModal
+        story={deletingStory}
+        isOpen={!!deletingStory}
+        onClose={handleCancelDelete}
+        onConfirm={handleConfirmDelete}
+      />
     </>
   )
 }

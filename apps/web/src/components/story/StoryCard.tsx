@@ -45,7 +45,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
   const handleDeleteClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
-    if (onDelete && confirm(`Are you sure you want to delete the story "${story.title}"?`)) {
+    if (onDelete) {
       onDelete(story);
     }
   };
