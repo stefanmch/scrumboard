@@ -87,8 +87,14 @@ export function StoryEditModal({
     currentDescription === 'Add your story description here...'
   )
 
+  // Check if any field still has placeholder content
+  const hasPlaceholderContent = (
+    currentTitle === 'New Story' ||
+    currentDescription === 'Add your story description here...'
+  )
+
   // Check if form is valid for saving
-  const isValidForSave = currentTitle && currentDescription && !isDefaultContent
+  const isValidForSave = currentTitle && currentDescription && !hasPlaceholderContent
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
