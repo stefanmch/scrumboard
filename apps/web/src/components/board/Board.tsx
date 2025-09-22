@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { DndContext, DragOverlay, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { BoardColumn } from './BoardColumn'
@@ -14,6 +14,12 @@ export function Board() {
   const [columns, setColumns] = useState<Column[]>(initialColumns)
   const [activeStory, setActiveStory] = useState<Story | null>(null)
   const [editingStory, setEditingStory] = useState<Story | null>(null)
+  const [isDragReady, setIsDragReady] = useState(false)
+
+  // Prevent hydration mismatch by only enabling drag after client hydration
+  useEffect(() => {
+    setIsDragReady(true)
+  }, [])
 
   const findStoryById = (storyId: string): Story | null => {
     for (const column of columns) {
@@ -123,8 +129,10 @@ export function Board() {
     const target = columns.find(c => c.status === columnStatus)
     if (!target) return
 
+    // Generate a deterministic ID based on existing stories count
+    const totalStories = columns.reduce((acc, col) => acc + col.stories.length, 0)
     const newStory: Story = {
-      id: `story-${Date.now()}`,
+      id: `story-${totalStories + 1}`,
       title: 'New Story',
       description: 'Add your story description here...',
       points: 3,
@@ -137,6 +145,29 @@ export function Board() {
 
     setColumns(prev => prev.map(col => (col.id === target.id ? { ...col, stories: [...col.stories, newStory] } : col)))
     setEditingStory(newStory)
+  }
+
+  // Render static version during SSR, interactive version after hydration
+  if (!isDragReady) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+        {/* Header */}
+        <div className="mb-8">
+          <p className="text-gray-600">Drag stories between columns, click to edit, or add new stories</p>
+        </div>
+        {/* Board - Static Version */}
+        <div className="flex gap-8 overflow-x-auto pb-8">
+          {columns.map(column => (
+            <BoardColumn
+              key={column.id}
+              column={column}
+              onAddStory={() => handleAddStory(column.status)}
+              onEditStory={handleEditStory}
+            />
+          ))}
+        </div>
+      </div>
+    )
   }
 
   return (

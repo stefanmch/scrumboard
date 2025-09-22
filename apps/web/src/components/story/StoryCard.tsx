@@ -93,7 +93,11 @@ export function StoryCard({ story, onEdit, dragListeners }: StoryCardProps) {
           )}
           <div className="flex items-center text-xs text-gray-400">
             <Clock className="w-3 h-3 mr-1" />
-            <span>{story.createdAt.toLocaleDateString()}</span>
+            <span>{story.createdAt.toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'short',
+              day: 'numeric'
+            })}</span>
           </div>
         </div>
       </div>
