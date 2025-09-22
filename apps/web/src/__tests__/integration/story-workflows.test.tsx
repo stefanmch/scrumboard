@@ -10,23 +10,10 @@ import '../mocks/api'
 import '../mocks/dnd-kit'
 
 describe('Story Workflows Integration', () => {
-  const initialStories = [
-    createMockStory({
-      id: 'story-1',
-      title: 'Existing Story',
-      description: 'Existing Description',
-      status: 'TODO',
-      rank: 1,
-    }),
-  ]
-
   beforeEach(() => {
     resetApiMocks()
-    // Ensure the mock is properly set up for this test
-    mockStoriesApi.getAll.mockResolvedValue(initialStories)
-    mockStoriesApi.getByStatus.mockImplementation((status) => {
-      return Promise.resolve(initialStories.filter(s => s.status === status))
-    })
+    // Use the global mock stories that are already set up
+    // These include: 'TODO Story', 'In Progress Story', 'Done Story'
   })
 
   afterEach(() => {
@@ -60,7 +47,7 @@ describe('Story Workflows Integration', () => {
       })
 
       // Step 1: Click Add Story button
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       expect(addButtons.length).toBeGreaterThan(0)
       await user.click(addButtons[0]) // Click first add button (TODO column)
 
@@ -120,11 +107,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Open create modal
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -158,11 +145,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Open create modal
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -190,7 +177,7 @@ describe('Story Workflows Integration', () => {
 
       const updatedStory = createMockStory({
         id: 'story-1',
-        title: 'Updated Existing Story',
+        title: 'Updated TODO Story',
         description: 'Updated description with more details',
         storyPoints: 8,
         assigneeId: 'new-user-456',
@@ -200,11 +187,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Step 1: Hover over story to reveal edit button
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       // Step 2: Click edit button
@@ -221,17 +208,17 @@ describe('Story Workflows Integration', () => {
         expect(screen.getByText('Edit Story')).toBeInTheDocument()
       })
 
-      expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
-      expect(screen.getByDisplayValue('Existing Description')).toBeInTheDocument()
+      expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
+      expect(screen.getByDisplayValue('First story description')).toBeInTheDocument()
 
       // Step 4: Modify the form
-      const titleInput = screen.getByDisplayValue('Existing Story')
-      const descriptionInput = screen.getByDisplayValue('Existing Description')
+      const titleInput = screen.getByDisplayValue('TODO Story')
+      const descriptionInput = screen.getByDisplayValue('First story description')
       const storyPointsSelect = screen.getByDisplayValue('3')
       const assigneeInput = screen.getByDisplayValue('')
 
       await user.clear(titleInput)
-      await user.type(titleInput, 'Updated Existing Story')
+      await user.type(titleInput, 'Updated TODO Story')
 
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Updated description with more details')
@@ -250,7 +237,7 @@ describe('Story Workflows Integration', () => {
         expect(mockStoriesApi.update).toHaveBeenCalledWith(
           'story-1',
           expect.objectContaining({
-            title: 'Updated Existing Story',
+            title: 'Updated TODO Story',
             description: 'Updated description with more details',
             storyPoints: 8,
             assigneeId: 'new-user-456',
@@ -270,11 +257,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Open edit modal
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -286,11 +273,11 @@ describe('Story Workflows Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
       })
 
       // Make some changes
-      const titleInput = screen.getByDisplayValue('Existing Story')
+      const titleInput = screen.getByDisplayValue('TODO Story')
       await user.clear(titleInput)
       await user.type(titleInput, 'Modified Title')
 
@@ -307,7 +294,7 @@ describe('Story Workflows Integration', () => {
       expect(mockStoriesApi.update).not.toHaveBeenCalled()
 
       // Original story should still be visible
-      expect(screen.getByText('Existing Story')).toBeInTheDocument()
+      expect(screen.getByText('TODO Story')).toBeInTheDocument()
     })
 
     it('should handle save errors gracefully', async () => {
@@ -317,11 +304,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Open and edit story
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -333,11 +320,11 @@ describe('Story Workflows Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
       })
 
       // Make changes and try to save
-      const titleInput = screen.getByDisplayValue('Existing Story')
+      const titleInput = screen.getByDisplayValue('TODO Story')
       await user.clear(titleInput)
       await user.type(titleInput, 'Updated Title')
 
@@ -363,11 +350,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Step 1: Hover over story to reveal delete button
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       // Step 2: Click delete button
@@ -385,7 +372,7 @@ describe('Story Workflows Integration', () => {
       })
 
       expect(screen.getByText('Are you sure you want to delete this story?')).toBeInTheDocument()
-      expect(screen.getByText('Existing Story')).toBeInTheDocument() // Story preview
+      expect(screen.getByText('TODO Story')).toBeInTheDocument() // Story preview
 
       // Step 4: Confirm deletion
       const confirmDeleteButton = screen.getByRole('button', { name: /Delete Story/i })
@@ -408,11 +395,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Open delete confirmation
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -440,7 +427,7 @@ describe('Story Workflows Integration', () => {
       expect(mockStoriesApi.delete).not.toHaveBeenCalled()
 
       // Story should still be visible
-      expect(screen.getByText('Existing Story')).toBeInTheDocument()
+      expect(screen.getByText('TODO Story')).toBeInTheDocument()
     })
 
     it('should handle deletion errors gracefully', async () => {
@@ -450,11 +437,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Attempt deletion
-      const storyCard = screen.getByText('Existing Story')
+      const storyCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
@@ -478,7 +465,7 @@ describe('Story Workflows Integration', () => {
       })
 
       // Story should remain in UI (error handling)
-      expect(screen.getByText('Existing Story')).toBeInTheDocument()
+      expect(screen.getByText('TODO Story')).toBeInTheDocument()
     })
   })
 
@@ -505,11 +492,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // Create first story
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -593,11 +580,11 @@ describe('Story Workflows Integration', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Existing Story')).toBeInTheDocument()
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
       // 1. Create a new story
-      const addButtons = screen.getAllByText(/Add/i)
+      const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
@@ -625,7 +612,7 @@ describe('Story Workflows Integration', () => {
       })
 
       // 2. Edit the existing story
-      const existingStoryCard = screen.getByText('Existing Story')
+      const existingStoryCard = screen.getByText('TODO Story')
       fireEvent.mouseEnter(existingStoryCard.closest('.group')!)
 
       await waitFor(() => {
@@ -637,10 +624,10 @@ describe('Story Workflows Integration', () => {
       await user.click(editButton)
 
       await waitFor(() => {
-        expect(screen.getByDisplayValue('Existing Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
       })
 
-      const editTitleInput = screen.getByDisplayValue('Existing Story')
+      const editTitleInput = screen.getByDisplayValue('TODO Story')
       await user.clear(editTitleInput)
       await user.type(editTitleInput, 'Updated Story')
 
