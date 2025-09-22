@@ -202,10 +202,26 @@ export function Board() {
         });
 
         // Replace draft story with saved story
-        setColumns(prev => prev.map(col => ({
-          ...col,
-          stories: col.stories.map(s => (s.id === updatedStory.id ? savedStory : s)),
-        })));
+        setColumns(prev => {
+          // First, remove the draft story from all columns
+          const columnsWithoutDraft = prev.map(col => ({
+            ...col,
+            stories: col.stories.filter(s => s.id !== updatedStory.id),
+          }));
+
+          // Then, add the saved story to the correct column based on its status
+          const newColumns = columnsWithoutDraft.map(col => {
+            if (col.status === savedStory.status) {
+              return {
+                ...col,
+                stories: [...col.stories, savedStory],
+              };
+            }
+            return col;
+          });
+
+          return newColumns;
+        });
       } else {
         // Update existing story
         const savedStory = await storiesApi.update(updatedStory.id, {

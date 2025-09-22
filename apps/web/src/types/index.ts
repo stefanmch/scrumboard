@@ -1,16 +1,57 @@
 export type StoryStatus = 'TODO' | 'IN_PROGRESS' | 'DONE' | 'BLOCKED';
 
+export interface Task {
+  id: string;
+  title: string;
+  description?: string;
+  status: string;
+  priority: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  storyId: string;
+  assigneeId?: string;
+  creatorId?: string;
+}
+
+export interface Comment {
+  id: string;
+  content: string;
+  type: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  storyId: string;
+  authorId: string;
+}
+
 export interface Story {
   id: string;
   title: string;
   description?: string;
+  acceptanceCriteria?: string;
   storyPoints?: number;
+  priority?: string;
   status: StoryStatus;
-  assigneeId?: string;
-  assignee?: { id: string; name: string; email: string };
-  rank: number; // Position within the column (1 = highest priority)
+  type?: string;
+  refinementStatus?: string;
+  tags?: string[];
+  businessValue?: number;
+  rank: number;
   createdAt: string | Date;
   updatedAt: string | Date;
+  projectId?: string;
+  sprintId?: string;
+  assigneeId?: string;
+  creatorId?: string;
+  parentId?: string;
+  // Relations
+  assignee?: { id: string; name: string; email: string } | null;
+  creator?: { id: string; name: string; email: string } | null;
+  parent?: Story | null;
+  children?: Story[];
+  project?: { id: string; name: string } | null;
+  sprint?: { id: string; name: string } | null;
+  tasks?: Task[];
+  comments?: Comment[];
 }
 
 export interface Column {
