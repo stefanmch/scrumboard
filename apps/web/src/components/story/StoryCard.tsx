@@ -68,12 +68,12 @@ export function StoryCard({ story, onEdit, dragListeners }: StoryCardProps) {
               {story.title}
             </h3>
           </div>
-          {story.points && (
-            <span 
+          {story.storyPoints && (
+            <span
               className="text-xs font-bold px-3 py-1 rounded-full ml-3 flex-shrink-0"
-              style={getPointsStyle(story.points)}
+              style={getPointsStyle(story.storyPoints)}
             >
-              {story.points} pts
+              {story.storyPoints} pts
             </span>
           )}
         </div>
@@ -88,12 +88,12 @@ export function StoryCard({ story, onEdit, dragListeners }: StoryCardProps) {
           {story.assignee && (
             <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
               <User className="w-4 h-4 mr-2 text-gray-500" />
-              <span className="font-medium">{story.assignee}</span>
+              <span className="font-medium">{typeof story.assignee === 'string' ? story.assignee : story.assignee.name}</span>
             </div>
           )}
           <div className="flex items-center text-xs text-gray-400">
             <Clock className="w-3 h-3 mr-1" />
-            <span>{story.createdAt.toLocaleDateString('en-US', {
+            <span>{new Date(story.createdAt).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'short',
               day: 'numeric'

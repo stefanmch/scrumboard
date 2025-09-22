@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
-import { Story } from '@/types'
+import { Story, StoryStatus } from '@/types'
 
 // --- Modal Portal ---
 function ModalPortal({ children }: { children: React.ReactNode }) {
@@ -139,13 +139,13 @@ export function StoryEditModal({
               {/* Points + Assignee */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="points" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="storyPoints" className="block text-sm font-semibold text-gray-700 mb-2">
                     Story Points
                   </label>
                   <select
-                    id="points"
-                    value={formData.points || 1}
-                    onChange={e => handleInputChange('points', parseInt(e.target.value))}
+                    id="storyPoints"
+                    value={formData.storyPoints || 1}
+                    onChange={e => handleInputChange('storyPoints', parseInt(e.target.value))}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   >
                     <option value={1}>1 point</option>
@@ -158,14 +158,14 @@ export function StoryEditModal({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="assignee" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="assigneeId" className="block text-sm font-semibold text-gray-700 mb-2">
                     Assignee
                   </label>
                   <input
-                    id="assignee"
+                    id="assigneeId"
                     type="text"
-                    value={formData.assignee || ''}
-                    onChange={e => handleInputChange('assignee', e.target.value)}
+                    value={formData.assigneeId || ''}
+                    onChange={e => handleInputChange('assigneeId', e.target.value)}
                     className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     placeholder="Enter assignee name..."
                   />
@@ -179,13 +179,13 @@ export function StoryEditModal({
                 </label>
                 <select
                   id="status"
-                  value={formData.status || 'todo'}
-                  onChange={e => handleInputChange('status', e.target.value as 'todo' | 'in-progress' | 'done')}
+                  value={formData.status || 'TODO'}
+                  onChange={e => handleInputChange('status', e.target.value as StoryStatus)}
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="todo">To Do</option>
-                  <option value="in-progress">In Progress</option>
-                  <option value="done">Done</option>
+                  <option value="TODO">To Do</option>
+                  <option value="IN_PROGRESS">In Progress</option>
+                  <option value="DONE">Done</option>
                 </select>
               </div>
 

@@ -6,20 +6,62 @@ import { arrayMove } from '@dnd-kit/sortable'
 import { BoardColumn } from './BoardColumn'
 import { StoryCard } from '@/components/story/StoryCard'
 import { StoryEditModal } from '@/components/modals/StoryEditModal'
-import { initialColumns } from '@/lib/mockData'
-import { Column, Story } from '@/types'
+import { storiesApi } from '@/lib/api'
+import { Column, Story, StoryStatus } from '@/types'
 
 // --- Board ---
 export function Board() {
-  const [columns, setColumns] = useState<Column[]>(initialColumns)
+  const [columns, setColumns] = useState<Column[]>([])
   const [activeStory, setActiveStory] = useState<Story | null>(null)
   const [editingStory, setEditingStory] = useState<Story | null>(null)
   const [isDragReady, setIsDragReady] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  // Prevent hydration mismatch by only enabling drag after client hydration
+  // Load stories from API and prevent hydration mismatch
   useEffect(() => {
-    setIsDragReady(true)
-  }, [])
+    loadStories();
+    setIsDragReady(true);
+  }, []);
+
+  const loadStories = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const stories = await storiesApi.getAll();
+
+      // Group stories by status
+      const todoStories = stories.filter(s => s.status === 'TODO').sort((a, b) => a.rank - b.rank);
+      const inProgressStories = stories.filter(s => s.status === 'IN_PROGRESS').sort((a, b) => a.rank - b.rank);
+      const doneStories = stories.filter(s => s.status === 'DONE').sort((a, b) => a.rank - b.rank);
+
+      setColumns([
+        {
+          id: 'todo',
+          title: 'To Do',
+          status: 'TODO',
+          stories: todoStories,
+        },
+        {
+          id: 'in-progress',
+          title: 'In Progress',
+          status: 'IN_PROGRESS',
+          stories: inProgressStories,
+        },
+        {
+          id: 'done',
+          title: 'Done',
+          status: 'DONE',
+          stories: doneStories,
+        },
+      ]);
+    } catch (err) {
+      console.error('Failed to load stories:', err);
+      setError('Failed to load stories. Please try again.');
+    } finally {
+      setIsLoading(false);
+    }
+  }
 
   const findStoryById = (storyId: string): Story | null => {
     for (const column of columns) {
@@ -42,7 +84,7 @@ export function Board() {
     setActiveStory(story)
   }
 
-  const handleDragOver = (event: DragOverEvent) => {
+  const handleDragOver = async (event: DragOverEvent) => {
     const { active, over } = event
     if (!over) return
 
@@ -68,10 +110,19 @@ export function Board() {
         }
         return col
       }))
+
+      // Update status in API
+      try {
+        await storiesApi.updateStatus(theStory.id, overColumn.status);
+      } catch (err) {
+        console.error('Failed to update story status:', err);
+      }
     } else if (overStory && overStory.id !== theStory.id) {
       // Reorder within same column or move to specific position in other column
       const targetColumn = findColumnByStoryId(overStory.id)
       if (!targetColumn) return
+
+      let storyIdsToUpdate: string[] = [];
 
       if (fromColumn.id === targetColumn.id) {
         // reorder within same column
@@ -81,6 +132,7 @@ export function Board() {
           const newIndex = col.stories.findIndex(s => s.id === overStory.id)
           if (oldIndex === -1 || newIndex === -1) return col
           const reordered = arrayMove(col.stories, oldIndex, newIndex)
+          storyIdsToUpdate = reordered.map(s => s.id);
           return {
             ...col,
             stories: reordered.map((s, i) => ({
@@ -101,10 +153,27 @@ export function Board() {
             const updated = { ...theStory, status: targetColumn.status, updatedAt: new Date() }
             const newStories = [...col.stories]
             newStories.splice(idx, 0, updated)
+            storyIdsToUpdate = newStories.map(s => s.id);
             return { ...col, stories: newStories.map((s, i) => ({ ...s, rank: i + 1 })) }
           }
           return col
         }))
+
+        // Update status in API if moving to different column
+        try {
+          await storiesApi.updateStatus(theStory.id, targetColumn.status);
+        } catch (err) {
+          console.error('Failed to update story status:', err);
+        }
+      }
+
+      // Update reordering in API
+      if (storyIdsToUpdate.length > 0) {
+        try {
+          await storiesApi.reorder(storyIdsToUpdate);
+        } catch (err) {
+          console.error('Failed to reorder stories:', err);
+        }
       }
     }
   }
@@ -118,33 +187,75 @@ export function Board() {
     Promise.resolve().then(() => setEditingStory(story))
   }
 
-  const handleSaveStory = (updatedStory: Story) => {
-    setColumns(prev => prev.map(col => ({
-      ...col,
-      stories: col.stories.map(s => (s.id === updatedStory.id ? updatedStory : s)),
-    })))
+  const handleSaveStory = async (updatedStory: Story) => {
+    try {
+      const savedStory = await storiesApi.update(updatedStory.id, {
+        title: updatedStory.title,
+        description: updatedStory.description,
+        storyPoints: updatedStory.storyPoints,
+        assigneeId: updatedStory.assigneeId,
+      });
+
+      setColumns(prev => prev.map(col => ({
+        ...col,
+        stories: col.stories.map(s => (s.id === savedStory.id ? savedStory : s)),
+      })))
+    } catch (err) {
+      console.error('Failed to save story:', err);
+      setError('Failed to save story. Please try again.');
+    }
     setEditingStory(null)
   }
-  const handleAddStory = (columnStatus: 'todo' | 'in-progress' | 'done') => {
+  const handleAddStory = async (columnStatus: StoryStatus) => {
     const target = columns.find(c => c.status === columnStatus)
     if (!target) return
 
-    // Generate a deterministic ID based on existing stories count
-    const totalStories = columns.reduce((acc, col) => acc + col.stories.length, 0)
-    const newStory: Story = {
-      id: `story-${totalStories + 1}`,
-      title: 'New Story',
-      description: 'Add your story description here...',
-      points: 3,
-      status: columnStatus,
-      assignee: '',
-      rank: target.stories.length + 1,
-      createdAt: new Date(),
-      updatedAt: new Date(),
-    }
+    try {
+      const newStory = await storiesApi.create({
+        title: 'New Story',
+        description: 'Add your story description here...',
+        storyPoints: 3,
+        status: columnStatus,
+      });
 
-    setColumns(prev => prev.map(col => (col.id === target.id ? { ...col, stories: [...col.stories, newStory] } : col)))
-    setEditingStory(newStory)
+      setColumns(prev => prev.map(col =>
+        col.id === target.id
+          ? { ...col, stories: [...col.stories, newStory] }
+          : col
+      ));
+      setEditingStory(newStory);
+    } catch (err) {
+      console.error('Failed to create story:', err);
+      setError('Failed to create story. Please try again.');
+    }
+  }
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+        <div className="flex justify-center items-center h-64">
+          <p className="text-gray-600">Loading stories...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-blue-50 p-8">
+        <div className="flex flex-col justify-center items-center h-64">
+          <p className="text-red-600 mb-4">{error}</p>
+          <button
+            onClick={loadStories}
+            className="px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   // Render static version during SSR, interactive version after hydration
