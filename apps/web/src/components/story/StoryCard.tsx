@@ -1,14 +1,15 @@
 import { Story } from '@/types';
-import { User, Clock, Edit3 } from 'lucide-react';
+import { User, Clock, Edit3, Trash2 } from 'lucide-react';
 import type { DraggableSyntheticListeners } from '@dnd-kit/core';
 
 interface StoryCardProps {
   story: Story;
   onEdit?: (story: Story) => void;
+  onDelete?: (story: Story) => void;
   dragListeners?: DraggableSyntheticListeners; // drag listeners from dnd-kit
 }
 
-export function StoryCard({ story, onEdit, dragListeners }: StoryCardProps) {
+export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardProps) {
   const getPointsStyle = (points: number) => {
     if (points <= 2) {
       return {
@@ -41,19 +42,39 @@ export function StoryCard({ story, onEdit, dragListeners }: StoryCardProps) {
     }
   };
 
+  const handleDeleteClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    e.preventDefault();
+    if (onDelete && confirm(`Are you sure you want to delete the story "${story.title}"?`)) {
+      onDelete(story);
+    }
+  };
+
   return (
     <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 relative group">
-      {/* Edit Button - positioned to avoid drag area */}
-      {onEdit && (
-        <button
-          onClick={handleEditClick}
-          className="absolute top-3 right-3 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 z-30 pointer-events-auto"
-          title="Edit story"
-          type="button"
-        >
-          <Edit3 className="w-4 h-4" />
-        </button>
-      )}
+      {/* Action Buttons - positioned to avoid drag area */}
+      <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-30">
+        {onEdit && (
+          <button
+            onClick={handleEditClick}
+            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg pointer-events-auto"
+            title="Edit story"
+            type="button"
+          >
+            <Edit3 className="w-4 h-4" />
+          </button>
+        )}
+        {onDelete && (
+          <button
+            onClick={handleDeleteClick}
+            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg pointer-events-auto"
+            title="Delete story"
+            type="button"
+          >
+            <Trash2 className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {/* Main draggable content area */}
       <div 

@@ -230,6 +230,20 @@ export function Board() {
     }
   }
 
+  const handleDeleteStory = async (storyToDelete: Story) => {
+    try {
+      await storiesApi.delete(storyToDelete.id);
+
+      setColumns(prev => prev.map(col => ({
+        ...col,
+        stories: col.stories.filter(s => s.id !== storyToDelete.id),
+      })));
+    } catch (err) {
+      console.error('Failed to delete story:', err);
+      setError('Failed to delete story. Please try again.');
+    }
+  }
+
   // Show loading state
   if (isLoading) {
     return (
@@ -274,6 +288,7 @@ export function Board() {
               column={column}
               onAddStory={() => handleAddStory(column.status)}
               onEditStory={handleEditStory}
+              onDeleteStory={handleDeleteStory}
             />
           ))}
         </div>
@@ -297,6 +312,7 @@ export function Board() {
                 column={column}
                 onAddStory={() => handleAddStory(column.status)}
                 onEditStory={handleEditStory}
+                onDeleteStory={handleDeleteStory}
               />
             ))}
           </div>

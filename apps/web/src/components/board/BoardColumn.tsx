@@ -8,9 +8,10 @@ interface BoardColumnProps {
   column: Column;
   onAddStory?: () => void;
   onEditStory?: (story: Story) => void;
+  onDeleteStory?: (story: Story) => void;
 }
 
-export function BoardColumn({ column, onAddStory, onEditStory }: BoardColumnProps) {
+export function BoardColumn({ column, onAddStory, onEditStory, onDeleteStory }: BoardColumnProps) {
   const { setNodeRef, isOver } = useDroppable({
     id: column.id,
   });
@@ -138,6 +139,7 @@ export function BoardColumn({ column, onAddStory, onEditStory }: BoardColumnProp
               key={story.id}
               story={story}
               onEdit={onEditStory}
+              onDelete={onDeleteStory}
             />
           ))}
           

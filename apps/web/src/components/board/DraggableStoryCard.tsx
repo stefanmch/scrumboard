@@ -6,9 +6,10 @@ import { Story } from '@/types';
 interface DraggableStoryCardProps {
   story: Story;
   onEdit?: (story: Story) => void;
+  onDelete?: (story: Story) => void;
 }
 
-export function DraggableStoryCard({ story, onEdit }: DraggableStoryCardProps) {
+export function DraggableStoryCard({ story, onEdit, onDelete }: DraggableStoryCardProps) {
   const {
     attributes,
     listeners,
@@ -33,9 +34,10 @@ export function DraggableStoryCard({ story, onEdit }: DraggableStoryCardProps) {
       {...attributes}
       className="relative"
     >
-      <StoryCard 
-        story={story} 
+      <StoryCard
+        story={story}
         onEdit={onEdit}
+        onDelete={onDelete}
         dragListeners={listeners}
       />
     </div>
