@@ -1,8 +1,13 @@
 // Mock @dnd-kit modules for testing
 jest.mock('@dnd-kit/core', () => ({
   DndContext: ({ children, onDragStart, onDragOver, onDragEnd }: any) => {
-    // Store callbacks for testing
-    ;(global as any).dndCallbacks = { onDragStart, onDragOver, onDragEnd }
+    // Store both original callbacks and mocked versions for testing
+    ;(global as any).dndCallbacks = {
+      onDragStart: jest.fn().mockImplementation(onDragStart),
+      onDragOver: jest.fn().mockImplementation(onDragOver),
+      onDragEnd: jest.fn().mockImplementation(onDragEnd),
+      original: { onDragStart, onDragOver, onDragEnd }
+    }
     return children
   },
   DragOverlay: ({ children }: any) => children,
@@ -57,6 +62,7 @@ export const simulateDragStart = (activeId: string) => {
   const callbacks = (global as any).dndCallbacks
   if (callbacks?.onDragStart) {
     act(() => {
+      // Call the mocked function which will also call the original
       callbacks.onDragStart({ active: { id: activeId } })
     })
   }
@@ -66,10 +72,12 @@ export const simulateDragOver = (activeId: string, overId: string) => {
   const callbacks = (global as any).dndCallbacks
   if (callbacks?.onDragOver) {
     act(() => {
-      callbacks.onDragOver({
+      const event = {
         active: { id: activeId },
         over: { id: overId }
-      })
+      }
+      // Call the mocked function which will also call the original
+      callbacks.onDragOver(event)
     })
   }
 }
@@ -78,7 +86,18 @@ export const simulateDragEnd = () => {
   const callbacks = (global as any).dndCallbacks
   if (callbacks?.onDragEnd) {
     act(() => {
+      // Call the mocked function which will also call the original
       callbacks.onDragEnd({})
     })
+  }
+}
+
+// Reset drag and drop mocks
+export const resetDndMocks = () => {
+  const callbacks = (global as any).dndCallbacks
+  if (callbacks) {
+    callbacks.onDragStart?.mockClear?.()
+    callbacks.onDragOver?.mockClear?.()
+    callbacks.onDragEnd?.mockClear?.()
   }
 }
