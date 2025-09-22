@@ -87,15 +87,15 @@ export function StoryEditModal({
         {/* Modal Content */}
         <div className="relative z-10 w-full max-w-2xl mx-4">
           <div
-            className="bg-white rounded-2xl shadow-2xl border border-gray-200 max-h-[90vh] overflow-y-auto"
+            className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">Edit Story</h2>
+            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+              <h2 className="text-2xl font-bold text-slate-900">Edit Story</h2>
               <button
                 onClick={onClose}
-                className="text-gray-400 hover:text-gray-600 transition-colors p-2 hover:bg-gray-100 rounded-lg"
+                className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-lg"
                 aria-label="Close modal"
               >
                 <X className="w-6 h-6" />
@@ -106,7 +106,7 @@ export function StoryEditModal({
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="title" className="block text-sm font-semibold text-slate-800 mb-2">
                   Story Title *
                 </label>
                 <input
@@ -114,7 +114,7 @@ export function StoryEditModal({
                   type="text"
                   value={formData.title || ''}
                   onChange={e => handleInputChange('title', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-slate-900 bg-white"
                   placeholder="As a user, I want to..."
                   required
                 />
@@ -122,7 +122,7 @@ export function StoryEditModal({
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="description" className="block text-sm font-semibold text-slate-800 mb-2">
                   Description *
                 </label>
                 <textarea
@@ -130,7 +130,7 @@ export function StoryEditModal({
                   rows={4}
                   value={formData.description || ''}
                   onChange={e => handleInputChange('description', e.target.value)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-slate-900 bg-white"
                   placeholder="Describe the user story in detail..."
                   required
                 />
@@ -139,14 +139,14 @@ export function StoryEditModal({
               {/* Points + Assignee */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="storyPoints" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="storyPoints" className="block text-sm font-semibold text-slate-800 mb-2">
                     Story Points
                   </label>
                   <select
                     id="storyPoints"
                     value={formData.storyPoints || 1}
                     onChange={e => handleInputChange('storyPoints', parseInt(e.target.value))}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                   >
                     <option value={1}>1 point</option>
                     <option value={2}>2 points</option>
@@ -158,7 +158,7 @@ export function StoryEditModal({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="assigneeId" className="block text-sm font-semibold text-gray-700 mb-2">
+                  <label htmlFor="assigneeId" className="block text-sm font-semibold text-slate-800 mb-2">
                     Assignee
                   </label>
                   <input
@@ -166,7 +166,7 @@ export function StoryEditModal({
                     type="text"
                     value={formData.assigneeId || ''}
                     onChange={e => handleInputChange('assigneeId', e.target.value)}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                     placeholder="Enter assignee name..."
                   />
                 </div>
@@ -174,14 +174,14 @@ export function StoryEditModal({
 
               {/* Status */}
               <div>
-                <label htmlFor="status" className="block text-sm font-semibold text-gray-700 mb-2">
+                <label htmlFor="status" className="block text-sm font-semibold text-slate-800 mb-2">
                   Status
                 </label>
                 <select
                   id="status"
                   value={formData.status || 'TODO'}
                   onChange={e => handleInputChange('status', e.target.value as StoryStatus)}
-                  className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                 >
                   <option value="TODO">To Do</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -190,11 +190,11 @@ export function StoryEditModal({
               </div>
 
               {/* Actions */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+              <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={onClose}
-                  className="px-6 py-3 text-sm font-medium text-gray-700 bg-gray-100 border border-gray-300 rounded-lg hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
+                  className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
                 >
                   Cancel
                 </button>
