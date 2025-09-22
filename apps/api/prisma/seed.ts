@@ -101,7 +101,7 @@ async function main() {
       data: {
         title: 'Email Notification System',
         description: 'Set up automated email notifications for important events',
-        storyPoints: 4,
+        storyPoints: 5,
         status: StoryStatus.DONE,
         priority: Priority.MEDIUM,
         projectId: defaultProject.id,
