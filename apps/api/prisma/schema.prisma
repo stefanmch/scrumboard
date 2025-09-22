@@ -14,19 +14,29 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String
-  password  String
-  avatar    String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id                String   @id @default(cuid())
+  email             String   @unique
+  name              String
+  password          String
+  avatar            String?
+  role              UserRole @default(MEMBER)
+  workingHours      String?  // JSON: { start: "09:00", end: "17:00" }
+  timeZone          String?
+  notificationPrefs String?  // JSON: notification preferences
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  teamMemberships TeamMember[]
-  createdTeams    Team[]       @relation("TeamCreator")
-  assignedTasks   Task[]       @relation("TaskAssignee")
-  createdTasks    Task[]       @relation("TaskCreator")
+  teamMemberships     TeamMember[]
+  createdTeams        Team[]            @relation("TeamCreator")
+  assignedTasks       Task[]            @relation("TaskAssignee")
+  createdTasks        Task[]            @relation("TaskCreator")
+  assignedStories     Story[]           @relation("StoryAssignee")
+  createdStories      Story[]           @relation("StoryCreator")
+  sprintComments      SprintComment[]
+  storyComments       StoryComment[]
+  retrospectiveItems  RetrospectiveItem[]
+  actionItems         ActionItem[]      @relation("ActionItemAssignee")
 
   @@map("users")
 }
@@ -72,8 +82,10 @@ model Project {
 
   // Relations
   teamId String
-  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  team   Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   tasks  Task[]
+  stories Story[]
+  sprints Sprint[]
 
   @@map("projects")
 }
@@ -90,19 +102,180 @@ model Task {
   // Relations
   projectId String
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
-  
+
+  storyId String?
+  story   Story?  @relation("StoryTasks", fields: [storyId], references: [id])
+
   assigneeId String?
   assignee   User?   @relation("TaskAssignee", fields: [assigneeId], references: [id])
-  
+
   creatorId String
   creator   User   @relation("TaskCreator", fields: [creatorId], references: [id])
 
   @@map("tasks")
 }
 
+model Sprint {
+  id          String      @id @default(cuid())
+  name        String
+  goal        String?
+  startDate   DateTime
+  endDate     DateTime
+  status      SprintStatus @default(PLANNING)
+  capacity    Int?        // Team capacity in story points
+  velocity    Int?        // Actual velocity after completion
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+
+  // Relations
+  projectId String
+  project   Project       @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  stories   Story[]
+  comments  SprintComment[]
+  retrospectives Retrospective[]
+
+  @@map("sprints")
+}
+
+model Story {
+  id                String         @id @default(cuid())
+  title             String
+  description       String?
+  acceptanceCriteria String?
+  storyPoints       Int?
+  priority          Priority       @default(MEDIUM)
+  status            StoryStatus    @default(DRAFT)
+  type              StoryType      @default(FEATURE)
+  refinementStatus  RefinementStatus @default(NOT_REFINED)
+  tags              String[]       // Array of tags
+  businessValue     Int?           // 1-100 scale
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  sprintId String?
+  sprint   Sprint? @relation(fields: [sprintId], references: [id])
+
+  assigneeId String?
+  assignee   User?   @relation("StoryAssignee", fields: [assigneeId], references: [id])
+
+  creatorId String
+  creator   User    @relation("StoryCreator", fields: [creatorId], references: [id])
+
+  // Story hierarchy
+  parentId String?
+  parent   Story?  @relation("StoryHierarchy", fields: [parentId], references: [id])
+  children Story[] @relation("StoryHierarchy")
+
+  tasks    Task[]  @relation("StoryTasks")
+  comments StoryComment[]
+
+  @@map("stories")
+}
+
+model SprintComment {
+  id        String   @id @default(cuid())
+  content   String
+  type      CommentType @default(GENERAL)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  sprintId String
+  sprint   Sprint @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User   @relation(fields: [authorId], references: [id])
+
+  @@map("sprint_comments")
+}
+
+model StoryComment {
+  id        String   @id @default(cuid())
+  content   String
+  type      CommentType @default(GENERAL)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  storyId String
+  story   Story @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User  @relation(fields: [authorId], references: [id])
+
+  @@map("story_comments")
+}
+
+model Retrospective {
+  id          String              @id @default(cuid())
+  title       String
+  type        RetrospectiveType   @default(LIGHTNING_DECISION_JAM)
+  status      RetrospectiveStatus @default(PLANNING)
+  facilitator String?
+  startTime   DateTime?
+  endTime     DateTime?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  // Relations
+  sprintId String
+  sprint   Sprint              @relation(fields: [sprintId], references: [id], onDelete: Cascade)
+  items    RetrospectiveItem[]
+  actionItems ActionItem[]
+
+  @@map("retrospectives")
+}
+
+model RetrospectiveItem {
+  id          String                 @id @default(cuid())
+  content     String
+  category    RetrospectiveCategory  @default(WHAT_WENT_WELL)
+  votes       Int                    @default(0)
+  isAnonymous Boolean                @default(true)
+  createdAt   DateTime               @default(now())
+  updatedAt   DateTime               @updatedAt
+
+  // Relations
+  retrospectiveId String
+  retrospective   Retrospective @relation(fields: [retrospectiveId], references: [id], onDelete: Cascade)
+
+  authorId String
+  author   User  @relation(fields: [authorId], references: [id])
+
+  @@map("retrospective_items")
+}
+
+model ActionItem {
+  id          String           @id @default(cuid())
+  title       String
+  description String?
+  status      ActionItemStatus @default(OPEN)
+  dueDate     DateTime?
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  // Relations
+  retrospectiveId String
+  retrospective   Retrospective @relation(fields: [retrospectiveId], references: [id], onDelete: Cascade)
+
+  assigneeId String?
+  assignee   User?   @relation("ActionItemAssignee", fields: [assigneeId], references: [id])
+
+  @@map("action_items")
+}
+
+
 // Enums
 enum UserRole {
   ADMIN
+  SCRUM_MASTER
+  PRODUCT_OWNER
+  DEVELOPER
+  STAKEHOLDER
   MEMBER
 }
 
@@ -123,4 +296,70 @@ enum Priority {
   MEDIUM
   HIGH
   URGENT
+}
+
+enum SprintStatus {
+  PLANNING
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum StoryStatus {
+  DRAFT
+  READY
+  IN_PROGRESS
+  DONE
+  ACCEPTED
+}
+
+enum StoryType {
+  FEATURE
+  BUG
+  ENHANCEMENT
+  SPIKE
+  EPIC
+}
+
+enum RefinementStatus {
+  NOT_REFINED
+  IN_REFINEMENT
+  REFINED
+  NEEDS_SPLITTING
+}
+
+enum CommentType {
+  GENERAL
+  IMPEDIMENT
+  QUESTION
+  DECISION
+  ACTION_ITEM
+}
+
+enum RetrospectiveType {
+  LIGHTNING_DECISION_JAM
+  WHAT_WENT_WELL_WHAT_WENT_WRONG
+  START_STOP_CONTINUE
+  CUSTOM
+}
+
+enum RetrospectiveStatus {
+  PLANNING
+  IN_PROGRESS
+  COMPLETED
+}
+
+enum RetrospectiveCategory {
+  WHAT_WENT_WELL
+  WHAT_WENT_WRONG
+  WHAT_TO_IMPROVE
+  ACTION_ITEM
+  APPRECIATION
+}
+
+enum ActionItemStatus {
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
 }
