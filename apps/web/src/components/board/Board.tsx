@@ -124,17 +124,20 @@ export function Board() {
       const targetColumn = findColumnByStoryId(overStory.id)
       if (!targetColumn) return
 
-      let storyIdsToUpdate: string[] = [];
-
       if (fromColumn.id === targetColumn.id) {
         // reorder within same column
+        const currentColumn = columns.find(c => c.id === fromColumn.id)
+        if (!currentColumn) return
+
+        const oldIndex = currentColumn.stories.findIndex(s => s.id === theStory.id)
+        const newIndex = currentColumn.stories.findIndex(s => s.id === overStory.id)
+        if (oldIndex === -1 || newIndex === -1) return
+
+        const reordered = arrayMove(currentColumn.stories, oldIndex, newIndex)
+        const storyIdsToUpdate = reordered.map(s => s.id)
+
         setColumns(prev => prev.map(col => {
           if (col.id !== fromColumn.id) return col
-          const oldIndex = col.stories.findIndex(s => s.id === theStory.id)
-          const newIndex = col.stories.findIndex(s => s.id === overStory.id)
-          if (oldIndex === -1 || newIndex === -1) return col
-          const reordered = arrayMove(col.stories, oldIndex, newIndex)
-          storyIdsToUpdate = reordered.map(s => s.id);
           return {
             ...col,
             stories: reordered.map((s, i) => ({
@@ -144,18 +147,29 @@ export function Board() {
             })),
           }
         }))
+
+        // Update reordering in API
+        try {
+          await storiesApi.reorder(storyIdsToUpdate);
+        } catch (err) {
+          console.error('Failed to reorder stories:', err);
+        }
       } else {
         // move to other column at overStory position
+        const targetColumnData = columns.find(c => c.id === targetColumn.id)
+        if (!targetColumnData) return
+
+        const idx = targetColumnData.stories.findIndex(s => s.id === overStory.id)
+        const updated = { ...theStory, status: targetColumn.status, updatedAt: new Date() }
+        const newStories = [...targetColumnData.stories]
+        newStories.splice(idx, 0, updated)
+        const storyIdsToUpdate = newStories.map(s => s.id)
+
         setColumns(prev => prev.map(col => {
           if (col.id === fromColumn.id) {
             const filtered = col.stories.filter(s => s.id !== theStory.id)
             return { ...col, stories: filtered.map((s, i) => ({ ...s, rank: i + 1 })) }
           } else if (col.id === targetColumn.id) {
-            const idx = col.stories.findIndex(s => s.id === overStory.id)
-            const updated = { ...theStory, status: targetColumn.status, updatedAt: new Date() }
-            const newStories = [...col.stories]
-            newStories.splice(idx, 0, updated)
-            storyIdsToUpdate = newStories.map(s => s.id);
             return { ...col, stories: newStories.map((s, i) => ({ ...s, rank: i + 1 })) }
           }
           return col
@@ -167,10 +181,8 @@ export function Board() {
         } catch (err) {
           console.error('Failed to update story status:', err);
         }
-      }
 
-      // Update reordering in API
-      if (storyIdsToUpdate.length > 0) {
+        // Update reordering in API
         try {
           await storiesApi.reorder(storyIdsToUpdate);
         } catch (err) {
