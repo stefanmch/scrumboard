@@ -189,45 +189,99 @@ export function Board() {
 
   const handleSaveStory = async (updatedStory: Story) => {
     try {
-      const savedStory = await storiesApi.update(updatedStory.id, {
-        title: updatedStory.title,
-        description: updatedStory.description,
-        storyPoints: updatedStory.storyPoints,
-        assigneeId: updatedStory.assigneeId,
-      });
+      const isDraft = updatedStory.id.startsWith('draft-');
 
-      setColumns(prev => prev.map(col => ({
-        ...col,
-        stories: col.stories.map(s => (s.id === savedStory.id ? savedStory : s)),
-      })))
+      if (isDraft) {
+        // Create new story in database
+        const savedStory = await storiesApi.create({
+          title: updatedStory.title,
+          description: updatedStory.description,
+          storyPoints: updatedStory.storyPoints,
+          status: updatedStory.status,
+          assigneeId: updatedStory.assigneeId,
+        });
+
+        // Replace draft story with saved story
+        setColumns(prev => prev.map(col => ({
+          ...col,
+          stories: col.stories.map(s => (s.id === updatedStory.id ? savedStory : s)),
+        })));
+      } else {
+        // Update existing story
+        const savedStory = await storiesApi.update(updatedStory.id, {
+          title: updatedStory.title,
+          description: updatedStory.description,
+          storyPoints: updatedStory.storyPoints,
+          assigneeId: updatedStory.assigneeId,
+        });
+
+        setColumns(prev => prev.map(col => ({
+          ...col,
+          stories: col.stories.map(s => (s.id === savedStory.id ? savedStory : s)),
+        })));
+      }
     } catch (err) {
       console.error('Failed to save story:', err);
       setError('Failed to save story. Please try again.');
     }
     setEditingStory(null)
   }
-  const handleAddStory = async (columnStatus: StoryStatus) => {
+
+  const handleCloseModal = () => {
+    if (editingStory && editingStory.id.startsWith('draft-')) {
+      // Remove draft story from local state if user cancels
+      setColumns(prev => prev.map(col => ({
+        ...col,
+        stories: col.stories.filter(s => s.id !== editingStory.id),
+      })));
+    }
+    setEditingStory(null)
+  }
+
+  const handleAddStory = (columnStatus: StoryStatus) => {
     const target = columns.find(c => c.status === columnStatus)
     if (!target) return
 
-    try {
-      const newStory = await storiesApi.create({
-        title: 'New Story',
-        description: 'Add your story description here...',
-        storyPoints: 3,
-        status: columnStatus,
-      });
+    // Create a draft story locally (not saved to DB yet)
+    const draftStory: Story = {
+      id: `draft-${Date.now()}`, // Temporary ID to identify drafts
+      title: 'New Story',
+      description: 'Add your story description here...',
+      storyPoints: 3,
+      status: columnStatus,
+      priority: 'MEDIUM',
+      type: 'FEATURE',
+      refinementStatus: 'NOT_REFINED',
+      tags: [],
+      rank: target.stories.length + 1,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+      projectId: 'default-project',
+      creatorId: 'default-user',
+      sprintId: null,
+      assigneeId: null,
+      parentId: null,
+      businessValue: null,
+      acceptanceCriteria: null,
+      assignee: null,
+      creator: null,
+      parent: null,
+      children: [],
+      project: null,
+      sprint: null,
+      tasks: [],
+      comments: [],
+    };
 
-      setColumns(prev => prev.map(col =>
-        col.id === target.id
-          ? { ...col, stories: [...col.stories, newStory] }
-          : col
-      ));
-      setEditingStory(newStory);
-    } catch (err) {
-      console.error('Failed to create story:', err);
-      setError('Failed to create story. Please try again.');
-    }
+    // Add draft story to local state
+    setColumns(prev => prev.map(col =>
+      col.id === target.id
+        ? { ...col, stories: [...col.stories, draftStory] }
+        : col
+    ));
+
+    // Open edit modal for the draft story
+    setEditingStory(draftStory);
   }
 
   const handleDeleteStory = async (storyToDelete: Story) => {
@@ -327,7 +381,7 @@ export function Board() {
         </DragOverlay>
       </DndContext>
       {/* Story Edit Modal */}
-      <StoryEditModal story={editingStory} isOpen={!!editingStory} onClose={() => setEditingStory(null)} onSave={handleSaveStory} />
+      <StoryEditModal story={editingStory} isOpen={!!editingStory} onClose={handleCloseModal} onSave={handleSaveStory} />
     </>
   )
 }
