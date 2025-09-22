@@ -144,11 +144,12 @@ model Story {
   acceptanceCriteria String?
   storyPoints       Int?
   priority          Priority       @default(MEDIUM)
-  status            StoryStatus    @default(DRAFT)
+  status            StoryStatus    @default(TODO)
   type              StoryType      @default(FEATURE)
   refinementStatus  RefinementStatus @default(NOT_REFINED)
   tags              String[]       // Array of tags
   businessValue     Int?           // 1-100 scale
+  rank              Int            @default(0) // Position within status column
   createdAt         DateTime       @default(now())
   updatedAt         DateTime       @updatedAt
 
@@ -306,11 +307,10 @@ enum SprintStatus {
 }
 
 enum StoryStatus {
-  DRAFT
-  READY
+  TODO
   IN_PROGRESS
   DONE
-  ACCEPTED
+  BLOCKED
 }
 
 enum StoryType {

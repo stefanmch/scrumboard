@@ -1,127 +1,124 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Priority, StoryStatus } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('🌱 Seeding database...');
 
-  // Create users
-  const user1 = await prisma.user.create({
-    data: {
-      email: 'admin@scrumboard.com',
-      name: 'Admin User',
-      password: 'password123', // In production, this should be hashed
+  // Create default user
+  const defaultUser = await prisma.user.upsert({
+    where: { id: 'default-user' },
+    update: {},
+    create: {
+      id: 'default-user',
+      email: 'user@example.com',
+      name: 'Default User',
+      password: 'placeholder', // In production, this would be a hashed password
     },
   });
 
-  const user2 = await prisma.user.create({
-    data: {
-      email: 'developer@scrumboard.com',
-      name: 'Developer User',
-      password: 'password123', // In production, this should be hashed
+  console.log('✅ Default user created');
+
+  // Create default team
+  const defaultTeam = await prisma.team.upsert({
+    where: { id: 'default-team' },
+    update: {},
+    create: {
+      id: 'default-team',
+      name: 'Default Team',
+      description: 'Default team for development',
+      creatorId: defaultUser.id,
     },
   });
 
-  const user3 = await prisma.user.create({
-    data: {
-      email: 'designer@scrumboard.com',
-      name: 'Designer User',
-      password: 'password123', // In production, this should be hashed
+  console.log('✅ Default team created');
+
+  // Create default project
+  const defaultProject = await prisma.project.upsert({
+    where: { id: 'default-project' },
+    update: {},
+    create: {
+      id: 'default-project',
+      name: 'Default Project',
+      description: 'Default project for development',
+      teamId: defaultTeam.id,
     },
   });
 
-  console.log('✅ Users created');
+  console.log('✅ Default project created');
 
-  // Create a team
-  const team = await prisma.team.create({
-    data: {
-      name: 'Development Team',
-      description: 'Main development team for the scrumboard application',
-      creatorId: user1.id,
-    },
-  });
-
-  console.log('✅ Team created');
-
-  // Add team members
-  await prisma.teamMember.createMany({
-    data: [
-      {
-        userId: user1.id,
-        teamId: team.id,
-        role: 'ADMIN',
+  // Create sample stories
+  const stories = await Promise.all([
+    prisma.story.create({
+      data: {
+        title: 'User Authentication System',
+        description: 'Implement secure login/logout functionality with JWT tokens',
+        storyPoints: 8,
+        status: StoryStatus.TODO,
+        priority: Priority.HIGH,
+        projectId: defaultProject.id,
+        creatorId: defaultUser.id,
+        rank: 1,
       },
-      {
-        userId: user2.id,
-        teamId: team.id,
-        role: 'MEMBER',
+    }),
+    prisma.story.create({
+      data: {
+        title: 'Dashboard Analytics Widget',
+        description: 'Create interactive charts showing user engagement metrics',
+        storyPoints: 5,
+        status: StoryStatus.TODO,
+        priority: Priority.MEDIUM,
+        projectId: defaultProject.id,
+        creatorId: defaultUser.id,
+        rank: 2,
       },
-      {
-        userId: user3.id,
-        teamId: team.id,
-        role: 'MEMBER',
+    }),
+    prisma.story.create({
+      data: {
+        title: 'Mobile Responsive Design',
+        description: 'Optimize the application layout for mobile devices',
+        storyPoints: 3,
+        status: StoryStatus.IN_PROGRESS,
+        priority: Priority.MEDIUM,
+        projectId: defaultProject.id,
+        creatorId: defaultUser.id,
+        rank: 1,
       },
-    ],
-  });
+    }),
+    prisma.story.create({
+      data: {
+        title: 'API Rate Limiting',
+        description: 'Implement rate limiting to prevent API abuse',
+        storyPoints: 2,
+        status: StoryStatus.IN_PROGRESS,
+        priority: Priority.LOW,
+        projectId: defaultProject.id,
+        creatorId: defaultUser.id,
+        rank: 2,
+      },
+    }),
+    prisma.story.create({
+      data: {
+        title: 'Email Notification System',
+        description: 'Set up automated email notifications for important events',
+        storyPoints: 4,
+        status: StoryStatus.DONE,
+        priority: Priority.MEDIUM,
+        projectId: defaultProject.id,
+        creatorId: defaultUser.id,
+        rank: 1,
+      },
+    }),
+  ]);
 
-  console.log('✅ Team members added');
-
-  // Create a project
-  const project = await prisma.project.create({
-    data: {
-      name: 'Scrumboard MVP',
-      description: 'Minimum viable product for the scrumboard application',
-      teamId: team.id,
-      status: 'ACTIVE',
-    },
-  });
-
-  console.log('✅ Project created');
-
-  // Create tasks
-  await prisma.task.createMany({
-    data: [
-      {
-        title: 'Set up database schema',
-        description: 'Create initial database schema with Prisma',
-        status: 'DONE',
-        priority: 'HIGH',
-        projectId: project.id,
-        creatorId: user1.id,
-        assigneeId: user2.id,
-      },
-      {
-        title: 'Implement user authentication',
-        description: 'Add JWT authentication for users',
-        status: 'IN_PROGRESS',
-        priority: 'HIGH',
-        projectId: project.id,
-        creatorId: user1.id,
-        assigneeId: user2.id,
-      },
-      {
-        title: 'Design user interface',
-        description: 'Create wireframes and mockups for the application',
-        status: 'TODO',
-        priority: 'MEDIUM',
-        projectId: project.id,
-        creatorId: user1.id,
-        assigneeId: user3.id,
-      },
-      {
-        title: 'Set up CI/CD pipeline',
-        description: 'Configure automated testing and deployment',
-        status: 'TODO',
-        priority: 'LOW',
-        projectId: project.id,
-        creatorId: user1.id,
-      },
-    ],
-  });
-
-  console.log('✅ Tasks created');
+  console.log('✅ Sample stories created');
 
   console.log('🎉 Database seeding completed!');
+  console.log('Created:');
+  console.log(`- 1 user (${defaultUser.email})`);
+  console.log(`- 1 team (${defaultTeam.name})`);
+  console.log(`- 1 project (${defaultProject.name})`);
+  console.log(`- ${stories.length} stories`);
 }
 
 main()
