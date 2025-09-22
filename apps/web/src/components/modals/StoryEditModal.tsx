@@ -23,7 +23,7 @@ export function StoryEditModal({
   story: Story | null
   isOpen: boolean
   onClose: () => void
-  onSave: (updatedStory: Story) => void
+  onSave: (updatedStory: Story) => Promise<void>
 }) {
   const [formData, setFormData] = useState<Partial<Story>>({})
   const [ready, setReady] = useState(false)
@@ -37,18 +37,37 @@ export function StoryEditModal({
     setReady(true)
   }, [])
 
-  // Escape to close + lock body scroll while open
+  // Escape to close + lock body scroll while open + intercept Enter key
   useEffect(() => {
     if (!isOpen) return
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose()
+      if (e.key === 'Escape') {
+        onClose()
+      } else if (e.key === 'Enter') {
+        // Always prevent Enter key from doing anything while modal is open
+        e.preventDefault()
+        e.stopPropagation()
+        e.stopImmediatePropagation()
+
+        // Only handle Enter if we're in a form field
+        const target = e.target as HTMLElement
+        if (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA') {
+          // Manually trigger form submission
+          const form = target.closest('form')
+          if (form) {
+            const submitEvent = new Event('submit', { bubbles: true, cancelable: true })
+            form.dispatchEvent(submitEvent)
+          }
+        }
+      }
     }
     const prevOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
-    window.addEventListener('keydown', onKey)
+    // Use capture phase to intercept events before they reach other handlers
+    window.addEventListener('keydown', onKey, { capture: true })
     return () => {
       document.body.style.overflow = prevOverflow
-      window.removeEventListener('keydown', onKey)
+      window.removeEventListener('keydown', onKey, { capture: true })
     }
   }, [isOpen, onClose])
 
@@ -58,15 +77,37 @@ export function StoryEditModal({
     setFormData(prev => ({ ...prev, [field]: value }))
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
+  // Get current values (use formData if available, fall back to story)
+  const currentTitle = formData.title ?? story?.title
+  const currentDescription = formData.description ?? story?.description
+
+  // Check if content is still default placeholder content
+  const isDefaultContent = (
+    currentTitle === 'New Story' &&
+    currentDescription === 'Add your story description here...'
+  )
+
+  // Check if form is valid for saving
+  const isValidForSave = currentTitle && currentDescription && !isDefaultContent
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (formData.title && formData.description) {
-      onSave({
+    e.stopPropagation()
+
+    // Don't save if form is not valid
+    if (!isValidForSave) {
+      return
+    }
+
+    try {
+      await onSave({
         ...story,
         ...formData,
         updatedAt: new Date(),
       } as Story)
       onClose()
+    } catch (err) {
+      // Keep modal open if save failed
     }
   }
 
@@ -112,7 +153,7 @@ export function StoryEditModal({
                 <input
                   id="title"
                   type="text"
-                  value={formData.title || ''}
+                  value={currentTitle || ''}
                   onChange={e => handleInputChange('title', e.target.value)}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-slate-900 bg-white"
                   placeholder="As a user, I want to..."
@@ -128,7 +169,7 @@ export function StoryEditModal({
                 <textarea
                   id="description"
                   rows={4}
-                  value={formData.description || ''}
+                  value={currentDescription || ''}
                   onChange={e => handleInputChange('description', e.target.value)}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-slate-900 bg-white"
                   placeholder="Describe the user story in detail..."
@@ -200,7 +241,12 @@ export function StoryEditModal({
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-3 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                  disabled={!isValidForSave}
+                  className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                    isValidForSave
+                      ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      : 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                  }`}
                 >
                   Save Changes
                 </button>

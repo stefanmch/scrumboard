@@ -238,11 +238,15 @@ export function Board() {
           stories: col.stories.map(s => (s.id === savedStory.id ? savedStory : s)),
         })));
       }
+
+      // Clear the editing story state after successful save
+      setEditingStory(null);
     } catch (err) {
       console.error('Failed to save story:', err);
       setError('Failed to save story. Please try again.');
+      // Re-throw error so modal knows save failed and doesn't close
+      throw err;
     }
-    setEditingStory(null)
   }
 
   const handleCloseModal = () => {
