@@ -25,7 +25,7 @@ export function StoryEditModal({
   onClose: () => void
   onSave: (updatedStory: Story) => Promise<void>
 }) {
-  const [formData, setFormData] = useState<Partial<Story>>({})
+  const [formData, setFormData] = useState<Partial<Story>>(story || {})
   const [ready, setReady] = useState(false)
 
   useEffect(() => {
@@ -185,7 +185,7 @@ export function StoryEditModal({
                   </label>
                   <select
                     id="storyPoints"
-                    value={formData.storyPoints || 1}
+                    value={formData.storyPoints || story?.storyPoints || 1}
                     onChange={e => handleInputChange('storyPoints', parseInt(e.target.value))}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                   >
@@ -220,7 +220,7 @@ export function StoryEditModal({
                 </label>
                 <select
                   id="status"
-                  value={formData.status || 'TODO'}
+                  value={formData.status || story?.status || 'TODO'}
                   onChange={e => handleInputChange('status', e.target.value as StoryStatus)}
                   className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                 >
