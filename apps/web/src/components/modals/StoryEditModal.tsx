@@ -202,11 +202,15 @@ export function StoryEditModal({
           <div
             className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="story-modal-title"
+            aria-describedby="story-modal-description"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
               <div>
-                <h2 className="text-2xl font-bold text-slate-900">
+                <h2 id="story-modal-title" className="text-2xl font-bold text-slate-900">
                   {story?.id.startsWith('draft-') ? 'Create Story' : 'Edit Story'}
                 </h2>
                 {hasUnsavedChanges && (
@@ -224,7 +228,7 @@ export function StoryEditModal({
             </div>
 
             {/* Form */}
-            <form onSubmit={handleSubmit} className="p-6 space-y-6">
+            <form id="story-modal-description" onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Error Message with Retry */}
               {lastError && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">

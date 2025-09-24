@@ -33,7 +33,7 @@ describe('Story Workflows Integration', () => {
         status: 'TODO',
         assigneeId: 'user-123',
       })
-      mockStoriesApi.create.mockResolvedValue(newStory)
+      mockStoriesApi.create.mockImplementation(() => Promise.resolve(newStory))
 
       // Render the board
       render(<Board />)
@@ -47,24 +47,27 @@ describe('Story Workflows Integration', () => {
       })
 
       // Step 1: Click Add Story button
-      const addButtons = screen.getAllByTitle('Add new story')
-      expect(addButtons.length).toBeGreaterThan(0)
-      await user.click(addButtons[0]) // Click first add button (TODO column)
+      const addButton = screen.getByTestId('add-story-button-todo')
+      expect(addButton).toBeInTheDocument()
+      await user.click(addButton) // Click TODO column add button
 
-      // Step 2: Modal should open with default values
+      // Step 2: Wait for modal to open and verify it's there
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
+      // Verify default placeholder values exist
       expect(screen.getByDisplayValue('New Story')).toBeInTheDocument()
       expect(screen.getByDisplayValue('Add your story description here...')).toBeInTheDocument()
 
-      // Step 3: Fill in the form
+      // Step 3: Fill in the form - must clear placeholder content
       const titleInput = screen.getByDisplayValue('New Story')
       const descriptionInput = screen.getByDisplayValue('Add your story description here...')
-      const storyPointsSelect = screen.getByDisplayValue('3') // Default value
+      const storyPointsSelect = screen.getByLabelText(/Story Points/)
       const assigneeInput = screen.getByLabelText(/Assignee/)
 
+      // Clear and replace with new values (not placeholders)
       await user.clear(titleInput)
       await user.type(titleInput, 'Brand New Story')
 
@@ -76,25 +79,38 @@ describe('Story Workflows Integration', () => {
       await user.clear(assigneeInput)
       await user.type(assigneeInput, 'user-123')
 
-      // Step 4: Save the story
-      const saveButton = screen.getByText('Save Changes')
-      expect(saveButton).toBeEnabled()
+      // Verify form now has valid values (not placeholders)
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('Brand New Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('Detailed description for the new story')).toBeInTheDocument()
+      })
+
+      // Step 4: Wait for validation to update and save button to be enabled
+      const saveButton = screen.getByRole('button', { name: 'Create Story' })
+      await waitFor(() => {
+        expect(saveButton).toBeEnabled()
+      })
+
+      expect(mockStoriesApi.create).not.toHaveBeenCalled()
       await user.click(saveButton)
 
       // Step 5: Verify API call was made correctly
+      // Wait longer and be more explicit about expectations
       await waitFor(() => {
-        expect(mockStoriesApi.create).toHaveBeenCalledWith({
-          title: 'Brand New Story',
-          description: 'Detailed description for the new story',
-          storyPoints: 5,
-          status: 'TODO',
-          assigneeId: 'user-123',
-        })
+        expect(mockStoriesApi.create).toHaveBeenCalledTimes(1)
+      }, { timeout: 3000 })
+
+      expect(mockStoriesApi.create).toHaveBeenCalledWith({
+        title: 'Brand New Story',
+        description: 'Detailed description for the new story',
+        storyPoints: 5,
+        status: 'TODO',
+        assigneeId: 'user-123',
       })
 
       // Step 6: Modal should close
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: 'Create Story' })).not.toBeInTheDocument()
       })
 
       // Step 7: New story should appear on the board
@@ -111,11 +127,11 @@ describe('Story Workflows Integration', () => {
       })
 
       // Open create modal
-      const addButtons = screen.getAllByTitle('Add new story')
-      await user.click(addButtons[0])
+      const addButton = screen.getByTestId('add-story-button-todo')
+      await user.click(addButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Fill some data
@@ -129,7 +145,7 @@ describe('Story Workflows Integration', () => {
 
       // Modal should close
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: 'Create Story' })).not.toBeInTheDocument()
       })
 
       // No API call should be made
@@ -149,22 +165,22 @@ describe('Story Workflows Integration', () => {
       })
 
       // Open create modal
-      const addButtons = screen.getAllByTitle('Add new story')
-      await user.click(addButtons[0])
+      const addButton = screen.getByTestId('add-story-button-todo')
+      await user.click(addButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Try to save with default (invalid) content
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: 'Create Story' })
       expect(saveButton).toBeDisabled()
 
       // Try to click it anyway (should not work)
       await user.click(saveButton)
 
       // Modal should remain open
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
 
       // No API call should be made
       expect(mockStoriesApi.create).not.toHaveBeenCalled()
@@ -511,11 +527,11 @@ describe('Story Workflows Integration', () => {
       })
 
       // Create first story
-      const addButtons = screen.getAllByTitle('Add new story')
-      await user.click(addButtons[0])
+      const addButton = screen.getByTestId('add-story-button-todo')
+      await user.click(addButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       const titleInput1 = screen.getByDisplayValue('New Story')
@@ -527,7 +543,7 @@ describe('Story Workflows Integration', () => {
       await user.clear(descriptionInput1)
       await user.type(descriptionInput1, 'First description')
 
-      const saveButton1 = screen.getByText('Save Changes')
+      const saveButton1 = screen.getByRole('button', { name: 'Create Story' })
       await user.click(saveButton1)
 
       await waitFor(() => {
@@ -535,15 +551,15 @@ describe('Story Workflows Integration', () => {
       })
 
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: 'Create Story' })).not.toBeInTheDocument()
       })
 
       // Create second story
-      const addButtons2 = screen.getAllByText(/Add/i)
-      await user.click(addButtons2[0])
+      const addButton2 = screen.getByTestId('add-story-button-todo')
+      await user.click(addButton2)
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       const titleInput2 = screen.getByDisplayValue('New Story')
@@ -555,7 +571,7 @@ describe('Story Workflows Integration', () => {
       await user.clear(descriptionInput2)
       await user.type(descriptionInput2, 'Second description')
 
-      const saveButton2 = screen.getByText('Save Changes')
+      const saveButton2 = screen.getByRole('button', { name: 'Create Story' })
       await user.click(saveButton2)
 
       await waitFor(() => {
@@ -599,11 +615,11 @@ describe('Story Workflows Integration', () => {
       })
 
       // 1. Create a new story
-      const addButtons = screen.getAllByTitle('Add new story')
-      await user.click(addButtons[0])
+      const addButton = screen.getByTestId('add-story-button-todo')
+      await user.click(addButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
@@ -615,7 +631,7 @@ describe('Story Workflows Integration', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Created description')
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: 'Create Story' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -623,7 +639,7 @@ describe('Story Workflows Integration', () => {
       })
 
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: 'Create Story' })).not.toBeInTheDocument()
       })
 
       // 2. Edit the existing story
