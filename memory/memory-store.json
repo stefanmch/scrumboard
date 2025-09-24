@@ -1,0 +1,10 @@
+{
+  "default": [
+    {
+      "key": "analysis/error_handling_gaps",
+      "value": "\n{\n  \"critical_findings\": {\n    \"test_failures\": {\n      \"selector_issues\": \"Multiple elements with same title attribute causing test selector conflicts\",\n      \"mock_data_mismatch\": \"Test mock data does not align with actual component expectations\",\n      \"async_race_conditions\": \"Race conditions in async form submission handling\"\n    },\n    \"api_error_handling\": {\n      \"limited_user_feedback\": \"API errors only logged to console, no user-visible error messages\",\n      \"no_retry_mechanism\": \"No automatic retry or user-initiated retry for failed operations\",\n      \"inconsistent_error_states\": \"Error handling varies between create/update operations\"\n    },\n    \"form_validation\": {\n      \"client_side_only\": \"Validation only on client side, no server-side validation feedback\",\n      \"placeholder_content_handling\": \"Complex logic to detect default/placeholder content\",\n      \"no_loading_states\": \"Missing loading states during API operations\"\n    }\n  },\n  \"architectural_gaps\": {\n    \"error_boundary\": \"No React error boundaries for graceful error handling\",\n    \"global_error_state\": \"No centralized error state management\",\n    \"user_experience\": \"Poor error recovery UX - users stuck in modal on failures\"\n  }\n}\n",
+      "namespace": "default",
+      "timestamp": 1758695951180
+    }
+  ]
+}
