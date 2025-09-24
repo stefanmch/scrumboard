@@ -55,7 +55,7 @@ function BoardContent() {
   }, [])
 
   // Helper function to handle API errors with user feedback and retry options
-  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true, retryAction?: () => Promise<void>) => {
+  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true, retryAction?: () => Promise<void>, setGlobalError: boolean = true) => {
     console.error(`Failed to ${operation}:`, error)
 
     let errorState: ErrorState
@@ -84,7 +84,7 @@ function BoardContent() {
                   await retryAction()
                   toast.showSuccess(`Successfully ${operation.replace('Failed to ', '')}`)
                 } catch (retryError) {
-                  handleApiError(retryError, operation, true, retryAction)
+                  handleApiError(retryError, operation, true, retryAction, setGlobalError)
                 }
               }
             }
@@ -97,7 +97,7 @@ function BoardContent() {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
       errorState = {
         message: `Failed to ${operation}. ${errorMessage}`,
-        type: 'network',
+        type: operation.includes('load') ? 'load' : operation.includes('drag') ? 'drag' : operation.includes('delete') ? 'delete' : 'network',
         isRetryable: true,
         originalError: error instanceof Error ? error : new Error(String(error))
       }
@@ -118,7 +118,7 @@ function BoardContent() {
                   await retryAction()
                   toast.showSuccess(`Successfully ${operation.replace('Failed to ', '')}`)
                 } catch (retryError) {
-                  handleApiError(retryError, operation, true, retryAction)
+                  handleApiError(retryError, operation, true, retryAction, setGlobalError)
                 }
               }
             }
@@ -129,7 +129,10 @@ function BoardContent() {
       }
     }
 
-    setError(errorState)
+    // Only set global error state if requested (not for modal operations)
+    if (setGlobalError) {
+      setError(errorState)
+    }
     return errorState
   }, [toast])
 
@@ -186,7 +189,7 @@ function BoardContent() {
         setColumns(currentColumns)
 
         // Use enhanced error handling with retry action
-        handleApiError(error, operation, true, retryAction)
+        handleApiError(error, operation, true, retryAction, true)
         return null
       })
       .finally(() => {
@@ -239,7 +242,7 @@ function BoardContent() {
       }
     } catch (err) {
       const retryAction = () => loadStories(showLoadingSpinner)
-      const errorState = handleApiError(err, 'load stories', !showLoadingSpinner, retryAction)
+      const errorState = handleApiError(err, 'load stories', !showLoadingSpinner, retryAction, true)
 
       // If we have a previous successful state and this isn't the main loading, offer to restore it
       if (lastSuccessfulState.length > 0 && errorState?.isRetryable && !showLoadingSpinner) {
@@ -532,7 +535,8 @@ function BoardContent() {
         return handleSaveStory(updatedStory)
       }
 
-      const errorState = handleApiError(err, `${operation} story`, true, retryAction)
+      // Don't set global error state for modal save operations - let the modal handle it
+      const errorState = handleApiError(err, `${operation} story`, true, retryAction, false)
 
       // Don't close modal on error - let user retry or cancel
       // Form state is automatically preserved since we don't clear editingStory
