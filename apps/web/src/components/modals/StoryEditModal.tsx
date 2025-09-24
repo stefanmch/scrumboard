@@ -1,9 +1,11 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useState, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { X } from 'lucide-react'
 import { Story, StoryStatus } from '@/types'
+import { useToast } from '@/components/ui/Toast'
+import { ApiError } from '@/lib/api'
 
 // --- Modal Portal ---
 function ModalPortal({ children }: { children: React.ReactNode }) {
@@ -22,7 +24,6 @@ export function StoryEditModal({
   isOpen,
   onClose,
   onSave,
-  isLoading = false,
 }: {
   story: Story | null
   isOpen: boolean
@@ -33,13 +34,37 @@ export function StoryEditModal({
   const [formData, setFormData] = useState<Partial<Story>>(story || {})
   const [ready, setReady] = useState(false)
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  const [lastSaveError, setLastSaveError] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+  const [lastError, setLastError] = useState<ApiError | Error | null>(null)
+  const { showError, showSuccess } = useToast()
+
+  const handleClose = useCallback(() => {
+    // Prevent closing while saving
+    if (isSaving) {
+      return
+    }
+
+    // Warn about unsaved changes for non-draft stories
+    if (hasUnsavedChanges && story && !story.id.startsWith('draft-')) {
+      const shouldClose = window.confirm(
+        'You have unsaved changes. Are you sure you want to close without saving?'
+      )
+      if (!shouldClose) {
+        return
+      }
+    }
+
+    // Clear any errors when closing
+    setLastError(null)
+    onClose()
+  }, [isSaving, hasUnsavedChanges, story, onClose])
 
   useEffect(() => {
     if (story) {
       setFormData(story)
       setHasUnsavedChanges(false)
-      setLastSaveError(null)
+      setLastError(null)
+      setIsSaving(false)
     }
   }, [story])
 
@@ -53,7 +78,7 @@ export function StoryEditModal({
     if (!isOpen) return
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'Escape') {
-        onClose()
+        handleClose()
       } else if (e.key === 'Enter') {
         // Always prevent Enter key from doing anything while modal is open
         e.preventDefault()
@@ -80,25 +105,19 @@ export function StoryEditModal({
       document.body.style.overflow = prevOverflow
       window.removeEventListener('keydown', onKey, { capture: true })
     }
-  }, [isOpen, onClose])
+  }, [isOpen, handleClose])
 
   if (!story || !isOpen) return null
 
   const handleInputChange = (field: keyof Story, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
     setHasUnsavedChanges(true)
-    setLastSaveError(null) // Clear error when user makes changes
+    setLastError(null) // Clear error when user makes changes
   }
 
   // Get current values (use formData if available, fall back to story)
   const currentTitle = formData.title ?? story?.title
   const currentDescription = formData.description ?? story?.description
-
-  // Check if content is still default placeholder content
-  const isDefaultContent = (
-    currentTitle === 'New Story' &&
-    currentDescription === 'Add your story description here...'
-  )
 
   // Check if any field still has placeholder content
   const hasPlaceholderContent = (
@@ -113,13 +132,15 @@ export function StoryEditModal({
     e.preventDefault()
     e.stopPropagation()
 
-    // Don't save if form is not valid or if already loading
-    if (!isValidForSave || isLoading) {
+    // Don't save if form is not valid or if already saving
+    if (!isValidForSave || isSaving) {
       return
     }
 
+    setIsSaving(true)
+    setLastError(null)
+
     try {
-      setLastSaveError(null)
       await onSave({
         ...story,
         ...formData,
@@ -128,31 +149,38 @@ export function StoryEditModal({
 
       // Only close if save was successful
       setHasUnsavedChanges(false)
+      setIsSaving(false)
+
+      // Show success message
+      showSuccess(
+        story?.id.startsWith('draft-')
+          ? 'Story created successfully'
+          : 'Story updated successfully'
+      )
+
       // onClose() is called from parent after successful save
     } catch (err) {
-      // Keep modal open if save failed and show error
-      const errorMessage = err instanceof Error ? err.message : 'Failed to save story'
-      setLastSaveError(errorMessage)
+      setIsSaving(false)
+
+      // Store the error for potential retry
+      const error = err instanceof Error ? err : new Error('Failed to save story')
+      setLastError(error)
+
+      // Show user-friendly error message via toast
+      showError(error, 'Save Failed')
+
+      // Keep modal open so user doesn't lose their changes
+      console.error('Failed to save story:', error)
     }
   }
 
-  const handleClose = () => {
-    // Prevent closing while saving
-    if (isLoading) {
-      return
-    }
+  const handleRetry = async () => {
+    if (!lastError || isSaving) return
 
-    // Warn about unsaved changes for non-draft stories
-    if (hasUnsavedChanges && story && !story.id.startsWith('draft-')) {
-      const shouldClose = window.confirm(
-        'You have unsaved changes. Are you sure you want to close without saving?'
-      )
-      if (!shouldClose) {
-        return
-      }
-    }
-
-    onClose()
+    // Clear error and retry
+    setLastError(null)
+    const submitEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent
+    await handleSubmit(submitEvent)
   }
 
   return (
@@ -160,9 +188,9 @@ export function StoryEditModal({
       <div
         className="fixed inset-0 z-50 flex items-center justify-center"
         onClick={e => {
-          if (!ready) return
+          if (!ready || isSaving) return
           if (e.target === e.currentTarget) {
-            onClose()
+            handleClose()
           }
         }}
       >
@@ -187,7 +215,7 @@ export function StoryEditModal({
               </div>
               <button
                 onClick={handleClose}
-                disabled={isLoading}
+                disabled={isSaving}
                 className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Close modal"
               >
@@ -197,16 +225,29 @@ export function StoryEditModal({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
-              {/* Error Message */}
-              {lastSaveError && (
+              {/* Error Message with Retry */}
+              {lastError && (
                 <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <div className="flex items-start gap-3">
+                    <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <h3 className="text-sm font-medium text-red-800">Save Failed</h3>
-                      <p className="text-sm text-red-700 mt-1">{lastSaveError}</p>
+                      <p className="text-sm text-red-700 mt-1">
+                        {lastError instanceof ApiError
+                          ? lastError.getUserFriendlyMessage()
+                          : lastError.message || 'An unexpected error occurred'}
+                      </p>
+                      {lastError instanceof ApiError && lastError.isRetryable && (
+                        <button
+                          onClick={handleRetry}
+                          disabled={isSaving}
+                          className="mt-3 text-sm font-medium text-red-800 underline hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          {isSaving ? 'Retrying...' : 'Try Again'}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -302,24 +343,24 @@ export function StoryEditModal({
                 <button
                   type="button"
                   onClick={handleClose}
-                  disabled={isLoading}
+                  disabled={isSaving}
                   className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!isValidForSave || isLoading}
+                  disabled={!isValidForSave || isSaving}
                   className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors flex items-center gap-2 ${
-                    isValidForSave && !isLoading
+                    isValidForSave && !isSaving
                       ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                       : 'text-gray-400 bg-gray-200 cursor-not-allowed'
                   }`}
                 >
-                  {isLoading && (
+                  {isSaving && (
                     <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                   )}
-                  {isLoading ? 'Saving...' : story?.id.startsWith('draft-') ? 'Create Story' : 'Save Changes'}
+                  {isSaving ? 'Saving...' : story?.id.startsWith('draft-') ? 'Create Story' : 'Save Changes'}
                 </button>
               </div>
             </form>

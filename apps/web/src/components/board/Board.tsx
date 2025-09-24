@@ -34,6 +34,7 @@ function BoardContent() {
   const [loadingState, setLoadingState] = useState<LoadingState>({ isLoading: true, operations: new Set() })
   const [error, setError] = useState<ErrorState | null>(null)
   const [lastSuccessfulState, setLastSuccessfulState] = useState<Column[]>([])
+  const [autoRecoveryAttempts, setAutoRecoveryAttempts] = useState(0)
 
   const toast = useToast()
 
@@ -53,8 +54,8 @@ function BoardContent() {
     })
   }, [])
 
-  // Helper function to handle API errors with user feedback
-  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true, setGlobalError: boolean = true) => {
+  // Helper function to handle API errors with user feedback and retry options
+  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true, retryAction?: () => Promise<void>, setGlobalError: boolean = true) => {
     console.error(`Failed to ${operation}:`, error)
 
     let errorState: ErrorState
@@ -68,7 +69,29 @@ function BoardContent() {
       }
 
       if (showToast) {
-        toast.showError(error, `Failed to ${operation}`)
+        // For retryable errors, show toast with retry action
+        if (error.isRetryable && retryAction) {
+          const toastId = toast.addToast({
+            type: 'error',
+            title: `Failed to ${operation}`,
+            message: error.getUserFriendlyMessage(),
+            duration: 10000, // Longer duration for retry toasts
+            action: {
+              label: 'Retry',
+              onClick: async () => {
+                toast.removeToast(toastId)
+                try {
+                  await retryAction()
+                  toast.showSuccess(`Successfully ${operation.replace('Failed to ', '')}`)
+                } catch (retryError) {
+                  handleApiError(retryError, operation, true, retryAction, setGlobalError)
+                }
+              }
+            }
+          })
+        } else {
+          toast.showError(error, `Failed to ${operation}`)
+        }
       }
     } else {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
@@ -80,7 +103,29 @@ function BoardContent() {
       }
 
       if (showToast) {
-        toast.showError(errorMessage, `Failed to ${operation}`)
+        // Network errors are always retryable
+        if (retryAction) {
+          const toastId = toast.addToast({
+            type: 'error',
+            title: `Failed to ${operation}`,
+            message: errorMessage,
+            duration: 10000,
+            action: {
+              label: 'Retry',
+              onClick: async () => {
+                toast.removeToast(toastId)
+                try {
+                  await retryAction()
+                  toast.showSuccess(`Successfully ${operation.replace('Failed to ', '')}`)
+                } catch (retryError) {
+                  handleApiError(retryError, operation, true, retryAction, setGlobalError)
+                }
+              }
+            }
+          })
+        } else {
+          toast.showError(errorMessage, `Failed to ${operation}`)
+        }
       }
     }
 
@@ -92,12 +137,12 @@ function BoardContent() {
   }, [toast])
 
   // Optimistic update with rollback capability
-  const withOptimisticUpdate = useCallback(<T>(
+  const withOptimisticUpdate = useCallback((
     optimisticUpdate: () => void,
-    apiCall: () => Promise<T>,
+    apiCall: () => Promise<any>,
     rollbackUpdate: () => void,
     operation: string
-  ): Promise<T | null> => {
+  ): Promise<any | null> => {
     // Save current state for rollback
     const currentColumns = columns
 
@@ -106,6 +151,30 @@ function BoardContent() {
 
     // Make API call
     setOperationLoading(operation, true)
+
+    // Define retry action that includes re-applying optimistic update
+    const retryAction = async () => {
+      try {
+        // Re-apply optimistic update before retry
+        setColumns(currentColumns) // Reset to original state
+        optimisticUpdate() // Re-apply optimistic update
+        setOperationLoading(operation, true)
+
+        const result = await apiCall()
+
+        // Success - update successful state
+        setLastSuccessfulState(columns)
+        setError(null)
+        return result
+      } catch (retryError) {
+        // Rollback on retry failure
+        rollbackUpdate()
+        setColumns(currentColumns)
+        throw retryError
+      } finally {
+        setOperationLoading(operation, false)
+      }
+    }
 
     return apiCall()
       .then(result => {
@@ -118,7 +187,9 @@ function BoardContent() {
         // Rollback optimistic update
         rollbackUpdate()
         setColumns(currentColumns)
-        handleApiError(error, operation)
+
+        // Use enhanced error handling with retry action
+        handleApiError(error, operation, true, retryAction, true)
         return null
       })
       .finally(() => {
@@ -126,13 +197,7 @@ function BoardContent() {
       })
   }, [columns, handleApiError, setOperationLoading])
 
-  // Load stories from API and prevent hydration mismatch
-  useEffect(() => {
-    loadStories();
-    setIsDragReady(true);
-  }, []);
-
-  const loadStories = async (showLoadingSpinner: boolean = true) => {
+  const loadStories = useCallback(async (showLoadingSpinner: boolean = true) => {
     try {
       if (showLoadingSpinner) {
         setLoadingState(prev => ({ ...prev, isLoading: true }))
@@ -176,21 +241,23 @@ function BoardContent() {
         toast.showSuccess('Stories refreshed successfully')
       }
     } catch (err) {
-      const errorState = handleApiError(err, 'load stories', !showLoadingSpinner)
+      const retryAction = () => loadStories(showLoadingSpinner)
+      const errorState = handleApiError(err, 'load stories', !showLoadingSpinner, retryAction, true)
 
-      // If we have a previous successful state, offer to restore it
-      if (lastSuccessfulState.length > 0 && errorState?.isRetryable) {
+      // If we have a previous successful state and this isn't the main loading, offer to restore it
+      if (lastSuccessfulState.length > 0 && errorState?.isRetryable && !showLoadingSpinner) {
         const toastId = toast.addToast({
-          type: 'error',
-          title: 'Failed to load stories',
-          message: 'Would you like to retry or continue with cached data?',
-          duration: 10000,
+          type: 'warning',
+          title: 'Failed to refresh stories',
+          message: 'Would you like to continue with cached data while we try to reconnect?',
+          duration: 15000, // Longer duration for important decisions
           action: {
             label: 'Use cached data',
             onClick: () => {
               setColumns(lastSuccessfulState)
               setError(null)
               toast.removeToast(toastId)
+              toast.showInfo('Using cached data. Stories will auto-refresh when connection is restored.')
             }
           }
         })
@@ -202,7 +269,54 @@ function BoardContent() {
         setOperationLoading('refresh', false)
       }
     }
-  }
+  }, [handleApiError, lastSuccessfulState, setOperationLoading, toast])
+
+  // Auto-recovery mechanism for network errors
+  useEffect(() => {
+    // Only trigger auto-recovery for network errors
+    if (!error || error.type !== 'network' || !error.isRetryable || autoRecoveryAttempts >= 3) {
+      // Reset recovery attempts when error is cleared or max attempts reached
+      if (!error && autoRecoveryAttempts > 0) {
+        setAutoRecoveryAttempts(0)
+      }
+      return
+    }
+
+    const retryDelay = Math.min(5000 * Math.pow(2, autoRecoveryAttempts), 30000) // Max 30 seconds
+
+    const timer = setTimeout(() => {
+      setAutoRecoveryAttempts(prev => prev + 1)
+      toast.showInfo(
+        `Attempting to reconnect... (${autoRecoveryAttempts + 1}/3)`,
+        'Auto-recovery'
+      )
+
+      loadStories(false).then(() => {
+        // Reset recovery attempts on successful reconnection
+        setAutoRecoveryAttempts(0)
+        toast.showSuccess('Connection restored successfully')
+      }).catch(() => {
+        // Auto-recovery failed, let user decide
+        if (autoRecoveryAttempts >= 2) {
+          toast.showWarning(
+            'Unable to restore connection automatically. Please check your internet connection.',
+            'Auto-recovery failed'
+          )
+        }
+      })
+    }, retryDelay)
+
+    return () => clearTimeout(timer)
+    // Only depend on error state and attempt counter to avoid loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [error?.type, autoRecoveryAttempts])
+
+  // Load stories from API and prevent hydration mismatch
+  useEffect(() => {
+    loadStories();
+    setIsDragReady(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []) // Run only once on mount
 
   const findStoryById = (storyId: string): Story | null => {
     for (const column of columns) {
@@ -416,10 +530,16 @@ function BoardContent() {
       // Clear the editing story state after successful save
       setEditingStory(null)
     } catch (err) {
+      // Create retry action that preserves form state
+      const retryAction = async () => {
+        return handleSaveStory(updatedStory)
+      }
+
       // Don't set global error state for modal save operations - let the modal handle it
-      const errorState = handleApiError(err, `${operation} story`, true, false)
+      const errorState = handleApiError(err, `${operation} story`, true, retryAction, false)
 
       // Don't close modal on error - let user retry or cancel
+      // Form state is automatically preserved since we don't clear editingStory
       throw errorState?.originalError || err
     } finally {
       setOperationLoading(`save-${updatedStory.id}`, false)
@@ -503,7 +623,7 @@ function BoardContent() {
     }
 
     // For saved stories, use optimistic update with API call
-    await withOptimisticUpdate(
+    const result = await withOptimisticUpdate(
       () => {
         setColumns(prev => prev.map(col => ({
           ...col,
@@ -517,11 +637,13 @@ function BoardContent() {
       'delete story'
     )
 
-    // Close modal after initiating delete
-    setDeletingStory(null)
-
-    // Show success toast
-    toast.showSuccess('Story deleted successfully')
+    // Only close modal and show success if deletion was successful
+    if (result !== null) {
+      setDeletingStory(null)
+      toast.showSuccess('Story deleted successfully')
+    }
+    // If result is null, the error was handled by withOptimisticUpdate
+    // and the modal remains open for user to retry or cancel
   }
 
   const handleCancelDelete = () => {
@@ -703,7 +825,7 @@ function BoardContent() {
         isOpen={!!deletingStory}
         onClose={handleCancelDelete}
         onConfirm={handleConfirmDelete}
-        isLoading={deletingStory ? loadingState.operations.has(`delete-${deletingStory.id}`) : false}
+        isLoading={deletingStory ? loadingState.operations.has('delete story') : false}
       />
     </>
   )

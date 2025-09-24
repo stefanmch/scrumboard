@@ -51,7 +51,10 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 relative group">
+    <div
+      className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 relative group"
+      data-testid={`story-card-${story.id}`}
+    >
       {/* Action Buttons - positioned to avoid drag area */}
       <div className="absolute top-3 right-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 z-30">
         {onEdit && (
@@ -59,6 +62,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
             onClick={handleEditClick}
             className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg pointer-events-auto"
             title="Edit story"
+            data-testid={`story-edit-button-${story.id}`}
             type="button"
           >
             <Edit3 className="w-4 h-4" />
@@ -69,6 +73,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
             onClick={handleDeleteClick}
             className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg pointer-events-auto"
             title="Delete story"
+            data-testid={`story-delete-button-${story.id}`}
             type="button"
           >
             <Trash2 className="w-4 h-4" />
