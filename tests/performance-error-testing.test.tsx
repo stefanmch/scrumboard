@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Board } from '@/components/board/Board'
 import { createMockStory } from '@/__tests__/utils/test-utils'
@@ -489,11 +489,11 @@ describe('Performance and Load Testing for Error Scenarios', () => {
       fireEvent.mouseEnter(storyCard.closest('.group')!)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyCard.closest('.group') as HTMLElement).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyCard.closest('.group') as HTMLElement).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {

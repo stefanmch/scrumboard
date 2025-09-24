@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen } from '@testing-library/react'
+import { render, screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StoryCard } from '../StoryCard'
 import { createMockStory } from '@/__tests__/utils/test-utils'
@@ -158,27 +158,31 @@ describe('StoryCard', () => {
     it('should render edit button when onEdit prop is provided', () => {
       render(<StoryCard story={defaultStory} onEdit={mockOnEdit} />)
 
-      const editButton = screen.getByTitle('Edit story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const editButton = within(storyCard).getByTitle('Edit story')
       expect(editButton).toBeInTheDocument()
     })
 
     it('should render delete button when onDelete prop is provided', () => {
       render(<StoryCard story={defaultStory} onDelete={mockOnDelete} />)
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const deleteButton = within(storyCard).getByTitle('Delete story')
       expect(deleteButton).toBeInTheDocument()
     })
 
     it('should not render edit button when onEdit prop is not provided', () => {
       render(<StoryCard story={defaultStory} />)
 
-      expect(screen.queryByTitle('Edit story')).not.toBeInTheDocument()
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      expect(within(storyCard).queryByTitle('Edit story')).not.toBeInTheDocument()
     })
 
     it('should not render delete button when onDelete prop is not provided', () => {
       render(<StoryCard story={defaultStory} />)
 
-      expect(screen.queryByTitle('Delete story')).not.toBeInTheDocument()
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      expect(within(storyCard).queryByTitle('Delete story')).not.toBeInTheDocument()
     })
   })
 
@@ -187,7 +191,8 @@ describe('StoryCard', () => {
       const user = userEvent.setup()
       render(<StoryCard story={defaultStory} onEdit={mockOnEdit} />)
 
-      const editButton = screen.getByTitle('Edit story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const editButton = within(storyCard).getByTitle('Edit story')
       await user.click(editButton)
 
       expect(mockOnEdit).toHaveBeenCalledWith(defaultStory)
@@ -197,7 +202,8 @@ describe('StoryCard', () => {
       const user = userEvent.setup()
       render(<StoryCard story={defaultStory} onDelete={mockOnDelete} />)
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const deleteButton = within(storyCard).getByTitle('Delete story')
       await user.click(deleteButton)
 
       expect(mockOnDelete).toHaveBeenCalledWith(defaultStory)
@@ -213,7 +219,8 @@ describe('StoryCard', () => {
         </div>
       )
 
-      const editButton = screen.getByTitle('Edit story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const editButton = within(storyCard).getByTitle('Edit story')
       await user.click(editButton)
 
       expect(mockOnEdit).toHaveBeenCalled()
@@ -230,7 +237,8 @@ describe('StoryCard', () => {
         </div>
       )
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const deleteButton = within(storyCard).getByTitle('Delete story')
       await user.click(deleteButton)
 
       expect(mockOnDelete).toHaveBeenCalled()
@@ -293,7 +301,8 @@ describe('StoryCard', () => {
     it('should show action buttons on hover through CSS classes', () => {
       render(<StoryCard story={defaultStory} onEdit={mockOnEdit} onDelete={mockOnDelete} />)
 
-      const actionContainer = screen.getByTitle('Edit story').parentElement!
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const actionContainer = within(storyCard).getByTitle('Edit story').parentElement!
       expect(actionContainer).toHaveClass('opacity-0')
       expect(actionContainer).toHaveClass('group-hover:opacity-100')
     })
@@ -311,8 +320,9 @@ describe('StoryCard', () => {
     it('should have proper button types for action buttons', () => {
       render(<StoryCard story={defaultStory} onEdit={mockOnEdit} onDelete={mockOnDelete} />)
 
-      const editButton = screen.getByTitle('Edit story')
-      const deleteButton = screen.getByTitle('Delete story')
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      const editButton = within(storyCard).getByTitle('Edit story')
+      const deleteButton = within(storyCard).getByTitle('Delete story')
 
       expect(editButton).toHaveAttribute('type', 'button')
       expect(deleteButton).toHaveAttribute('type', 'button')
@@ -321,8 +331,9 @@ describe('StoryCard', () => {
     it('should have proper title attributes for action buttons', () => {
       render(<StoryCard story={defaultStory} onEdit={mockOnEdit} onDelete={mockOnDelete} />)
 
-      expect(screen.getByTitle('Edit story')).toBeInTheDocument()
-      expect(screen.getByTitle('Delete story')).toBeInTheDocument()
+      const storyCard = screen.getByText('Test Story Title').closest('.group') as HTMLElement
+      expect(within(storyCard).getByTitle('Edit story')).toBeInTheDocument()
+      expect(within(storyCard).getByTitle('Delete story')).toBeInTheDocument()
     })
   })
 
