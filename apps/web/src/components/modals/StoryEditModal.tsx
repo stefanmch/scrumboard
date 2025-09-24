@@ -10,7 +10,10 @@ function ModalPortal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
   if (!mounted || typeof document === 'undefined') return null
-  return createPortal(children, document.body)
+
+  // Try to use modal-root element, fallback to document.body
+  const modalRoot = document.getElementById('modal-root') || document.body
+  return createPortal(children, modalRoot)
 }
 
 // --- Story Edit Modal ---
@@ -19,17 +22,25 @@ export function StoryEditModal({
   isOpen,
   onClose,
   onSave,
+  isLoading = false,
 }: {
   story: Story | null
   isOpen: boolean
   onClose: () => void
   onSave: (updatedStory: Story) => Promise<void>
+  isLoading?: boolean
 }) {
   const [formData, setFormData] = useState<Partial<Story>>(story || {})
   const [ready, setReady] = useState(false)
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+  const [lastSaveError, setLastSaveError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (story) setFormData(story)
+    if (story) {
+      setFormData(story)
+      setHasUnsavedChanges(false)
+      setLastSaveError(null)
+    }
   }, [story])
 
   // Allow backdrop close only after first paint to avoid open/close race
@@ -75,6 +86,8 @@ export function StoryEditModal({
 
   const handleInputChange = (field: keyof Story, value: string | number) => {
     setFormData(prev => ({ ...prev, [field]: value }))
+    setHasUnsavedChanges(true)
+    setLastSaveError(null) // Clear error when user makes changes
   }
 
   // Get current values (use formData if available, fall back to story)
@@ -100,21 +113,46 @@ export function StoryEditModal({
     e.preventDefault()
     e.stopPropagation()
 
-    // Don't save if form is not valid
-    if (!isValidForSave) {
+    // Don't save if form is not valid or if already loading
+    if (!isValidForSave || isLoading) {
       return
     }
 
     try {
+      setLastSaveError(null)
       await onSave({
         ...story,
         ...formData,
         updatedAt: new Date(),
       } as Story)
-      onClose()
+
+      // Only close if save was successful
+      setHasUnsavedChanges(false)
+      // onClose() is called from parent after successful save
     } catch (err) {
-      // Keep modal open if save failed
+      // Keep modal open if save failed and show error
+      const errorMessage = err instanceof Error ? err.message : 'Failed to save story'
+      setLastSaveError(errorMessage)
     }
+  }
+
+  const handleClose = () => {
+    // Prevent closing while saving
+    if (isLoading) {
+      return
+    }
+
+    // Warn about unsaved changes for non-draft stories
+    if (hasUnsavedChanges && story && !story.id.startsWith('draft-')) {
+      const shouldClose = window.confirm(
+        'You have unsaved changes. Are you sure you want to close without saving?'
+      )
+      if (!shouldClose) {
+        return
+      }
+    }
+
+    onClose()
   }
 
   return (
@@ -139,10 +177,18 @@ export function StoryEditModal({
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
-              <h2 className="text-2xl font-bold text-slate-900">Edit Story</h2>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">
+                  {story?.id.startsWith('draft-') ? 'Create Story' : 'Edit Story'}
+                </h2>
+                {hasUnsavedChanges && (
+                  <p className="text-sm text-amber-600 mt-1">You have unsaved changes</p>
+                )}
+              </div>
               <button
-                onClick={onClose}
-                className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-lg"
+                onClick={handleClose}
+                disabled={isLoading}
+                className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Close modal"
               >
                 <X className="w-6 h-6" />
@@ -151,6 +197,20 @@ export function StoryEditModal({
 
             {/* Form */}
             <form onSubmit={handleSubmit} className="p-6 space-y-6">
+              {/* Error Message */}
+              {lastSaveError && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center gap-2">
+                    <svg className="w-5 h-5 text-red-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
+                      <h3 className="text-sm font-medium text-red-800">Save Failed</h3>
+                      <p className="text-sm text-red-700 mt-1">{lastSaveError}</p>
+                    </div>
+                  </div>
+                </div>
+              )}
               {/* Title */}
               <div>
                 <label htmlFor="title" className="block text-sm font-semibold text-slate-800 mb-2">
@@ -237,24 +297,29 @@ export function StoryEditModal({
               </div>
 
               {/* Actions */}
+              {/* Actions */}
               <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
                 <button
                   type="button"
-                  onClick={onClose}
-                  className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors"
+                  onClick={handleClose}
+                  disabled={isLoading}
+                  className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  disabled={!isValidForSave}
-                  className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                    isValidForSave
+                  disabled={!isValidForSave || isLoading}
+                  className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors flex items-center gap-2 ${
+                    isValidForSave && !isLoading
                       ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                       : 'text-gray-400 bg-gray-200 cursor-not-allowed'
                   }`}
                 >
-                  Save Changes
+                  {isLoading && (
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                  )}
+                  {isLoading ? 'Saving...' : story?.id.startsWith('draft-') ? 'Create Story' : 'Save Changes'}
                 </button>
               </div>
             </form>

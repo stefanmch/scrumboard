@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Board } from '@/components/board/Board'
 import { createMockStory } from '../utils/test-utils'
@@ -192,15 +192,16 @@ describe('Story Workflows Integration', () => {
 
       // Step 1: Hover over story to reveal edit button
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
       // Step 2: Click edit button
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyCardContainer).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyCardContainer).getByTitle('Edit story')
       await user.click(editButton)
 
       // Step 3: Modal should open with existing data
@@ -254,6 +255,9 @@ describe('Story Workflows Integration', () => {
     it('should handle edit cancellation', async () => {
       const user = userEvent.setup()
 
+      // Mock window.confirm to simulate user clicking "Yes" to cancel changes
+      const confirmSpy = jest.spyOn(window, 'confirm').mockReturnValue(true)
+
       render(<Board />)
 
       await waitFor(() => {
@@ -262,14 +266,15 @@ describe('Story Workflows Integration', () => {
 
       // Open edit modal
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyCardContainer).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyCardContainer).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
@@ -295,6 +300,12 @@ describe('Story Workflows Integration', () => {
 
       // Original story should still be visible
       expect(screen.getByText('TODO Story')).toBeInTheDocument()
+
+      // Verify confirm dialog was shown for unsaved changes
+      expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes. Are you sure you want to close without saving?')
+
+      // Clean up mock
+      confirmSpy.mockRestore()
     })
 
     it('should handle save errors gracefully', async () => {
@@ -309,14 +320,15 @@ describe('Story Workflows Integration', () => {
 
       // Open and edit story
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyCardContainer).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyCardContainer).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
@@ -400,27 +412,30 @@ describe('Story Workflows Integration', () => {
 
       // Open delete confirmation
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
       await waitFor(() => {
-        const deleteButton = screen.getByTitle('Delete story')
+        const deleteButton = storyCardContainer.querySelector('button[title="Delete story"]') as HTMLElement
         expect(deleteButton).toBeInTheDocument()
+        expect(deleteButton).toBeVisible()
       })
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const deleteButton = storyCardContainer.querySelector('button[title="Delete story"]') as HTMLElement
       await user.click(deleteButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Delete Story')).toBeInTheDocument()
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+        expect(screen.getByText(/are you sure you want to delete this story/i)).toBeInTheDocument()
       })
 
       // Cancel deletion
-      const cancelButton = screen.getByText('Cancel')
+      const cancelButton = screen.getByRole('button', { name: /cancel/i })
       await user.click(cancelButton)
 
       // Modal should close
       await waitFor(() => {
-        expect(screen.queryByText('Delete Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       })
 
       // No API call should be made
@@ -613,14 +628,15 @@ describe('Story Workflows Integration', () => {
 
       // 2. Edit the existing story
       const existingStoryCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(existingStoryCard.closest('.group')!)
+      const existingStoryCardContainer = existingStoryCard.closest('.group')!
+      fireEvent.mouseEnter(existingStoryCardContainer)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(existingStoryCardContainer).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(existingStoryCardContainer).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {

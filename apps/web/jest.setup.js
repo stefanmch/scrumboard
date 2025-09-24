@@ -234,15 +234,48 @@ const mockStoriesApi = {
   }),
 }
 
+// Mock API Error class with comprehensive error handling
+class MockApiError extends Error {
+  constructor(status, message, originalError, isNetworkError = false) {
+    super(message)
+    this.name = 'ApiError'
+    this.status = status
+    this.originalError = originalError
+    this.isNetworkError = isNetworkError
+  }
+
+  get isClientError() {
+    return this.status >= 400 && this.status < 500
+  }
+
+  get isServerError() {
+    return this.status >= 500
+  }
+
+  get isRetryable() {
+    return this.isNetworkError || this.isServerError
+  }
+
+  getUserFriendlyMessage() {
+    if (this.isNetworkError) {
+      return 'Connection failed. Please check your internet connection and try again.'
+    }
+    switch (this.status) {
+      case 400:
+        return 'Invalid request. Please check your input and try again.'
+      case 404:
+        return 'The requested resource could not be found.'
+      case 500:
+        return 'Server error. Please try again in a few moments.'
+      default:
+        return this.message || 'An unexpected error occurred. Please try again.'
+    }
+  }
+}
+
 jest.mock('@/lib/api', () => ({
   storiesApi: mockStoriesApi,
-  ApiError: class MockApiError extends Error {
-    constructor(status, message) {
-      super(message)
-      this.name = 'ApiError'
-      this.status = status
-    }
-  },
+  ApiError: MockApiError,
 }))
 
 // Reset all mocks function
@@ -254,8 +287,30 @@ const resetApiMocks = () => {
   })
 }
 
+// Mock Toast Provider
+jest.mock('@/components/ui/Toast', () => ({
+  useToast: () => ({
+    toasts: [],
+    addToast: jest.fn(),
+    removeToast: jest.fn(),
+    clearAllToasts: jest.fn(),
+    showError: jest.fn(),
+    showSuccess: jest.fn(),
+    showWarning: jest.fn(),
+    showInfo: jest.fn(),
+  }),
+  ToastProvider: ({ children }) => children,
+}))
+
+// Mock Error Boundary
+jest.mock('@/components/error/ErrorBoundary', () => ({
+  ErrorBoundary: ({ children }) => children,
+  useErrorHandler: () => ({ handleError: jest.fn() }),
+}))
+
 // Make globals available for tests
 global.createMockStory = createMockStory
 global.mockStories = mockStories
 global.mockStoriesApi = mockStoriesApi
 global.resetApiMocks = resetApiMocks
+global.MockApiError = MockApiError

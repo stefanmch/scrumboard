@@ -175,7 +175,7 @@ describe('Board', () => {
 
       // Should open the edit modal with a draft story
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByText('Create Story')).toBeInTheDocument()
       })
 
       expect(screen.getByDisplayValue('New Story')).toBeInTheDocument()
@@ -195,7 +195,7 @@ describe('Board', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Fill in the form
@@ -230,7 +230,7 @@ describe('Board', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Close without saving
@@ -542,6 +542,13 @@ describe('Board', () => {
   })
 
   describe('Draft Story Handling', () => {
+    beforeEach(async () => {
+      render(<Board />)
+      await waitFor(() => {
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
+      })
+    })
+
     it('should handle draft stories correctly when saving', async () => {
       const user = userEvent.setup()
       const newStory = createMockStory({
@@ -551,16 +558,11 @@ describe('Board', () => {
       })
       mockStoriesApi.create.mockResolvedValue(newStory)
 
-      // Start with initial load
-      await waitFor(() => {
-        expect(screen.getByText('TODO Story')).toBeInTheDocument()
-      })
-
       const addButtons = screen.getAllByTitle('Add new story')
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Fill and save
@@ -573,7 +575,7 @@ describe('Board', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Saved Description')
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: 'Create Story' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -593,7 +595,7 @@ describe('Board', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       // Close without saving (creates a draft)
