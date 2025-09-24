@@ -410,7 +410,7 @@ describe('Form Validation and Error Handling Integration', () => {
 
       // Modal should close without validation issues
       await waitFor(() => {
-        expect(screen.queryByText('Create Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: /create story/i })).not.toBeInTheDocument()
       })
 
       // No API call should be made
@@ -499,7 +499,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should remain open with changes preserved
-      expect(screen.getByRole("heading", { name: /edit story/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /edit story/i })).toBeInTheDocument()
       expect(screen.getByDisplayValue('Updated Title')).toBeInTheDocument()
     })
 
@@ -531,7 +531,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Valid Description')
 
-      const saveButton = screen.getByRole("button", { name: /create story/i })
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -539,7 +539,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should still be open
-      expect(screen.getByRole("heading", { name: /create story/i })).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
 
       // Make a small change and try again
       await user.clear(titleInput)
@@ -580,7 +580,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /create story/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
@@ -591,7 +591,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Description with tags and symbols')
 
-      const saveButton = screen.getByRole("button", { name: /create story/i })
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeEnabled()
       await user.click(saveButton)
 
@@ -621,7 +621,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /create story/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
@@ -633,7 +633,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.type(descriptionInput, longDescription)
 
       // Should still be valid despite length
-      const saveButton = screen.getByRole("button", { name: /create story/i })
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeEnabled()
     })
 
@@ -650,11 +650,11 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByRole("heading", { name: /create story/i })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
-      const saveButton = screen.getByRole("button", { name: /create story/i })
+      const saveButton = screen.getByRole('button', { name: /create story/i })
 
       // Rapid changes
       await user.clear(titleInput)
