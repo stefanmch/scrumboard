@@ -37,7 +37,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Verify default content is present
@@ -45,7 +45,7 @@ describe('Form Validation and Error Handling Integration', () => {
       expect(screen.getByDisplayValue('Add your story description here...')).toBeInTheDocument()
 
       // Save button should be disabled
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeDisabled()
 
       // Try to submit anyway (should not work)
@@ -55,7 +55,7 @@ describe('Form Validation and Error Handling Integration', () => {
       expect(mockStoriesApi.create).not.toHaveBeenCalled()
 
       // Modal should remain open
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
     })
 
     it('should prevent submission with empty title', async () => {
@@ -71,7 +71,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Clear title but keep valid description
@@ -83,7 +83,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.type(descriptionInput, 'Valid description')
 
       // Save button should be disabled due to empty title
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeDisabled()
 
       await user.click(saveButton)
@@ -103,7 +103,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Clear description but keep valid title
@@ -115,7 +115,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.clear(descriptionInput)
 
       // Save button should be disabled due to empty description
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeDisabled()
 
       await user.click(saveButton)
@@ -141,7 +141,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Fill with valid content
@@ -154,7 +154,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.type(descriptionInput, 'Valid description content')
 
       // Save button should be enabled
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeEnabled()
 
       await user.click(saveButton)
@@ -184,12 +184,12 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
       const descriptionInput = screen.getByDisplayValue('Add your story description here...')
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
 
       // Initially disabled due to default content
       expect(saveButton).toBeDisabled()
@@ -285,7 +285,7 @@ describe('Form Validation and Error Handling Integration', () => {
 
       const titleInput = screen.getByDisplayValue('TODO Story')
       const descriptionInput = screen.getByDisplayValue('First story description')
-      const storyPointsSelect = screen.getByDisplayValue('3')
+      const storyPointsSelect = screen.getByLabelText('Story Points')
       const saveButton = screen.getByText('Save Changes')
 
       // Test various form interactions
@@ -326,7 +326,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Fill with valid content
@@ -366,7 +366,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Leave default (invalid) content
@@ -381,7 +381,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should remain open
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
     })
 
     it('should handle Escape key properly without validation errors', async () => {
@@ -397,7 +397,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Partially fill form
@@ -410,7 +410,7 @@ describe('Form Validation and Error Handling Integration', () => {
 
       // Modal should close without validation issues
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: /create story/i })).not.toBeInTheDocument()
       })
 
       // No API call should be made
@@ -433,7 +433,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Fill valid content
@@ -446,7 +446,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.type(descriptionInput, 'Valid Description')
 
       // Submit
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       await user.click(saveButton)
 
       // Should attempt API call
@@ -455,7 +455,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should remain open due to error
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       expect(screen.getByDisplayValue('Valid Title')).toBeInTheDocument()
     })
 
@@ -499,7 +499,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should remain open with changes preserved
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /edit story/i })).toBeInTheDocument()
       expect(screen.getByDisplayValue('Updated Title')).toBeInTheDocument()
     })
 
@@ -519,7 +519,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       // Fill and submit (will fail)
@@ -531,7 +531,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Valid Description')
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -539,7 +539,7 @@ describe('Form Validation and Error Handling Integration', () => {
       })
 
       // Modal should still be open
-      expect(screen.getByText('Edit Story')).toBeInTheDocument()
+      expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
 
       // Make a small change and try again
       await user.clear(titleInput)
@@ -555,7 +555,7 @@ describe('Form Validation and Error Handling Integration', () => {
 
       // Should close on success
       await waitFor(() => {
-        expect(screen.queryByText('Edit Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('heading', { name: /create story/i })).not.toBeInTheDocument()
       })
     })
   })
@@ -580,7 +580,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
@@ -591,7 +591,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Description with tags and symbols')
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeEnabled()
       await user.click(saveButton)
 
@@ -621,7 +621,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
@@ -633,7 +633,7 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.type(descriptionInput, longDescription)
 
       // Should still be valid despite length
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
       expect(saveButton).toBeEnabled()
     })
 
@@ -650,11 +650,11 @@ describe('Form Validation and Error Handling Integration', () => {
       await user.click(addButtons[0])
 
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: /create story/i })).toBeInTheDocument()
       })
 
       const titleInput = screen.getByDisplayValue('New Story')
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: /create story/i })
 
       // Rapid changes
       await user.clear(titleInput)
