@@ -54,7 +54,7 @@ function BoardContent() {
   }, [])
 
   // Helper function to handle API errors with user feedback
-  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true) => {
+  const handleApiError = useCallback((error: unknown, operation: string, showToast: boolean = true, setGlobalError: boolean = true) => {
     console.error(`Failed to ${operation}:`, error)
 
     let errorState: ErrorState
@@ -74,7 +74,7 @@ function BoardContent() {
       const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred'
       errorState = {
         message: `Failed to ${operation}. ${errorMessage}`,
-        type: 'network',
+        type: operation.includes('load') ? 'load' : operation.includes('drag') ? 'drag' : operation.includes('delete') ? 'delete' : 'network',
         isRetryable: true,
         originalError: error instanceof Error ? error : new Error(String(error))
       }
@@ -84,7 +84,10 @@ function BoardContent() {
       }
     }
 
-    setError(errorState)
+    // Only set global error state if requested (not for modal operations)
+    if (setGlobalError) {
+      setError(errorState)
+    }
     return errorState
   }, [toast])
 
@@ -413,7 +416,8 @@ function BoardContent() {
       // Clear the editing story state after successful save
       setEditingStory(null)
     } catch (err) {
-      const errorState = handleApiError(err, `${operation} story`)
+      // Don't set global error state for modal save operations - let the modal handle it
+      const errorState = handleApiError(err, `${operation} story`, true, false)
 
       // Don't close modal on error - let user retry or cancel
       throw errorState?.originalError || err

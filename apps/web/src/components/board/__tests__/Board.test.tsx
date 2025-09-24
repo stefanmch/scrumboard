@@ -121,7 +121,8 @@ describe('Board', () => {
       render(<Board />)
 
       await waitFor(() => {
-        expect(screen.getByText('Failed to load stories. Please try again.')).toBeInTheDocument()
+        expect(screen.getByText('Unable to Load Stories')).toBeInTheDocument()
+        expect(screen.getByText('Failed to load stories. API Error')).toBeInTheDocument()
       })
     })
 
@@ -175,7 +176,7 @@ describe('Board', () => {
 
       // Should open the edit modal with a draft story
       await waitFor(() => {
-        expect(screen.getByText('Create Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
       expect(screen.getByDisplayValue('New Story')).toBeInTheDocument()
@@ -208,8 +209,8 @@ describe('Board', () => {
       await user.clear(descriptionInput)
       await user.type(descriptionInput, 'Created Description')
 
-      // Submit the form
-      const saveButton = screen.getByText('Save Changes')
+      // Submit the form - for draft stories the button says "Create Story"
+      const saveButton = screen.getByRole('button', { name: 'Create Story' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -291,14 +292,15 @@ describe('Board', () => {
       mockStoriesApi.update.mockResolvedValue(updatedStory)
 
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyContainer)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
@@ -309,7 +311,7 @@ describe('Board', () => {
       await user.clear(titleInput)
       await user.type(titleInput, 'Updated TODO Story')
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: 'Save Changes' })
       await user.click(saveButton)
 
       await waitFor(() => {
@@ -488,26 +490,27 @@ describe('Board', () => {
       mockStoriesApi.update.mockRejectedValue(new Error('Save failed'))
 
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyContainer)
 
       await waitFor(() => {
-        const editButton = screen.getByTitle('Edit story')
+        const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
       })
 
-      const editButton = screen.getByTitle('Edit story')
+      const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
       })
 
-      const saveButton = screen.getByText('Save Changes')
+      const saveButton = screen.getByRole('button', { name: 'Save Changes' })
       await user.click(saveButton)
 
       // Modal should stay open when save fails
       await waitFor(() => {
-        expect(screen.getByText('Edit Story')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Edit Story' })).toBeInTheDocument()
       })
     })
 
