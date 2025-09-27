@@ -206,6 +206,7 @@ export function StoryEditModal({
             aria-modal="true"
             aria-labelledby="story-modal-title"
             aria-describedby="story-modal-description"
+            data-testid="story-modal"
           >
             {/* Header */}
             <div className="flex items-center justify-between p-6 border-b border-slate-200">
@@ -231,7 +232,7 @@ export function StoryEditModal({
             <form id="story-modal-description" onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Error Message with Retry */}
               {lastError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg" data-testid="save-error-message">
                   <div className="flex items-start gap-3">
                     <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -355,6 +356,7 @@ export function StoryEditModal({
                 <button
                   type="submit"
                   disabled={!isValidForSave || isSaving}
+                  data-testid="save-button"
                   className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors flex items-center gap-2 ${
                     isValidForSave && !isSaving
                       ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
