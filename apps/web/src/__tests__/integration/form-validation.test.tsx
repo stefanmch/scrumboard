@@ -1,7 +1,7 @@
 import React from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import { createMockStory } from '../utils/test-utils'
+import { createMockStory, setupModalTestEnvironment } from '../utils/test-utils'
 
 // Import the mocks FIRST before any components
 import '../mocks/api'
@@ -12,6 +12,9 @@ import { mockStoriesApi, resetApiMocks } from '../mocks/api'
 import { Board } from '@/components/board/Board'
 
 describe('Form Validation and Error Handling Integration', () => {
+  // Set up modal environment for React Portal-based modals
+  setupModalTestEnvironment()
+
   beforeEach(() => {
     resetApiMocks()
     // Use the global mock stories that are already set up

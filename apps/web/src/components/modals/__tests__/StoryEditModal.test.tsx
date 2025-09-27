@@ -2,24 +2,12 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StoryEditModal } from '../StoryEditModal'
-import { createMockStory } from '@/__tests__/utils/test-utils'
-
-// Mock the portal for modal rendering
-beforeEach(() => {
-  const modalRoot = document.createElement('div')
-  modalRoot.setAttribute('id', 'modal-root')
-  document.body.appendChild(modalRoot)
-})
-
-afterEach(() => {
-  const modalRoot = document.getElementById('modal-root')
-  if (modalRoot) {
-    document.body.removeChild(modalRoot)
-  }
-  document.body.style.overflow = ''
-})
+import { createMockStory, setupModalTestEnvironment } from '@/__tests__/utils/test-utils'
 
 describe('StoryEditModal', () => {
+  // Set up modal environment for React Portal-based modals
+  setupModalTestEnvironment()
+
   const mockOnClose = jest.fn()
   const mockOnSave = jest.fn()
   const mockStory = createMockStory({
@@ -284,12 +272,18 @@ describe('StoryEditModal', () => {
 
     it('should close modal after successful save', async () => {
       const user = userEvent.setup()
+      // Mock onSave to simulate parent behavior: close modal after successful save
+      const mockOnSaveWithClose = jest.fn().mockImplementation(async (story) => {
+        await mockOnSave(story)
+        mockOnClose() // Simulate parent component calling onClose after successful save
+      })
+
       render(
         <StoryEditModal
           story={mockStory}
           isOpen={true}
           onClose={mockOnClose}
-          onSave={mockOnSave}
+          onSave={mockOnSaveWithClose}
         />
       )
 

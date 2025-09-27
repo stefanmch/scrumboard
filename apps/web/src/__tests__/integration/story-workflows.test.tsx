@@ -1,15 +1,18 @@
+// Import the mocks first - they need to be hoisted
+import '../mocks/api'
+import '../mocks/dnd-kit'
+
 import React from 'react'
 import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Board } from '@/components/board/Board'
-import { createMockStory } from '../utils/test-utils'
+import { createMockStory, setupModalTestEnvironment } from '../utils/test-utils'
 import { mockStoriesApi, resetApiMocks } from '../mocks/api'
 
-// Import the mocks
-import '../mocks/api'
-import '../mocks/dnd-kit'
-
 describe('Story Workflows Integration', () => {
+  // Set up modal environment for React Portal-based modals
+  setupModalTestEnvironment()
+
   beforeEach(() => {
     resetApiMocks()
     // Use the global mock stories that are already set up
@@ -33,7 +36,8 @@ describe('Story Workflows Integration', () => {
         status: 'TODO',
         assigneeId: 'user-123',
       })
-      mockStoriesApi.create.mockImplementation(() => Promise.resolve(newStory))
+      // Mock the API call
+      mockStoriesApi.create.mockResolvedValue(newStory)
 
       // Render the board
       render(<Board />)
@@ -62,22 +66,23 @@ describe('Story Workflows Integration', () => {
       expect(screen.getByDisplayValue('Add your story description here...')).toBeInTheDocument()
 
       // Step 3: Fill in the form - must clear placeholder content
-      const titleInput = screen.getByDisplayValue('New Story')
-      const descriptionInput = screen.getByDisplayValue('Add your story description here...')
+      const titleInput = screen.getByLabelText(/Story Title/)
+      const descriptionInput = screen.getByLabelText(/Description/)
       const storyPointsSelect = screen.getByLabelText(/Story Points/)
       const assigneeInput = screen.getByLabelText(/Assignee/)
 
       // Clear and replace with new values (not placeholders)
-      await user.clear(titleInput)
-      await user.type(titleInput, 'Brand New Story')
+      // Use fireEvent.change to ensure the onChange handler is triggered
+      fireEvent.change(titleInput, { target: { value: '' } })
+      fireEvent.change(titleInput, { target: { value: 'Brand New Story' } })
 
-      await user.clear(descriptionInput)
-      await user.type(descriptionInput, 'Detailed description for the new story')
+      fireEvent.change(descriptionInput, { target: { value: '' } })
+      fireEvent.change(descriptionInput, { target: { value: 'Detailed description for the new story' } })
 
-      await user.selectOptions(storyPointsSelect, '5')
+      fireEvent.change(storyPointsSelect, { target: { value: '5' } })
 
-      await user.clear(assigneeInput)
-      await user.type(assigneeInput, 'user-123')
+      fireEvent.change(assigneeInput, { target: { value: '' } })
+      fireEvent.change(assigneeInput, { target: { value: 'user-123' } })
 
       // Verify form now has valid values (not placeholders)
       await waitFor(() => {
@@ -92,6 +97,8 @@ describe('Story Workflows Integration', () => {
       })
 
       expect(mockStoriesApi.create).not.toHaveBeenCalled()
+
+      // Click the save button using userEvent
       await user.click(saveButton)
 
       // Step 5: Verify API call was made correctly
