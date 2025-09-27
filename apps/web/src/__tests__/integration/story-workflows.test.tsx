@@ -66,10 +66,10 @@ describe('Story Workflows Integration', () => {
       expect(screen.getByDisplayValue('Add your story description here...')).toBeInTheDocument()
 
       // Step 3: Fill in the form - must clear placeholder content
-      const titleInput = screen.getByLabelText(/Story Title/) as HTMLInputElement
-      const descriptionInput = screen.getByLabelText(/Description/) as HTMLTextAreaElement
-      const storyPointsSelect = screen.getByLabelText(/Story Points/) as HTMLSelectElement
-      const assigneeInput = screen.getByLabelText(/Assignee/) as HTMLInputElement
+      const titleInput = screen.getByLabelText(/Story Title/)
+      const descriptionInput = screen.getByLabelText(/Description/)
+      const storyPointsSelect = screen.getByLabelText(/Story Points/)
+      const assigneeInput = screen.getByLabelText(/Assignee/)
 
       // Clear and replace with new values (not placeholders)
       // Use fireEvent.change to ensure the onChange handler is triggered
