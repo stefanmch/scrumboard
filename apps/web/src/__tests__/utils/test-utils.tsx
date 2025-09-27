@@ -101,4 +101,51 @@ export const cleanupModalContainer = () => {
   if (modalRoot) {
     document.body.removeChild(modalRoot)
   }
+  // Reset body overflow in case modal left it modified
+  document.body.style.overflow = ''
+}
+
+/**
+ * Reusable test utility function that sets up modal environment for tests.
+ * This handles both the modal-root setup and cleanup for React Portal-based modals.
+ *
+ * Usage:
+ * ```typescript
+ * describe('Modal Tests', () => {
+ *   setupModalTestEnvironment()
+ *
+ *   it('should render modal', () => {
+ *     // Your modal test here
+ *   })
+ * })
+ * ```
+ */
+export const setupModalTestEnvironment = () => {
+  beforeEach(() => {
+    setupModalContainer()
+  })
+
+  afterEach(() => {
+    cleanupModalContainer()
+  })
+}
+
+/**
+ * Higher-order function that wraps a test suite with modal setup.
+ * Alternative approach for setting up modal environment.
+ *
+ * Usage:
+ * ```typescript
+ * withModalTestEnvironment('Modal Tests', () => {
+ *   it('should render modal', () => {
+ *     // Your modal test here
+ *   })
+ * })
+ * ```
+ */
+export const withModalTestEnvironment = (description: string, testSuite: () => void) => {
+  describe(description, () => {
+    setupModalTestEnvironment()
+    testSuite()
+  })
 }

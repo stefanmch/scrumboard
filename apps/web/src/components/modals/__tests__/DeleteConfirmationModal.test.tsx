@@ -2,24 +2,12 @@ import React from 'react'
 import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { DeleteConfirmationModal } from '../DeleteConfirmationModal'
-import { createMockStory } from '@/__tests__/utils/test-utils'
-
-// Mock the portal for modal rendering
-beforeEach(() => {
-  const modalRoot = document.createElement('div')
-  modalRoot.setAttribute('id', 'modal-root')
-  document.body.appendChild(modalRoot)
-})
-
-afterEach(() => {
-  const modalRoot = document.getElementById('modal-root')
-  if (modalRoot) {
-    document.body.removeChild(modalRoot)
-  }
-  document.body.style.overflow = ''
-})
+import { createMockStory, setupModalTestEnvironment } from '@/__tests__/utils/test-utils'
 
 describe('DeleteConfirmationModal', () => {
+  // Set up modal environment for React Portal-based modals
+  setupModalTestEnvironment()
+
   const mockOnClose = jest.fn()
   const mockOnConfirm = jest.fn()
   const mockStory = createMockStory({
