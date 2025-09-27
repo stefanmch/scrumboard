@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within, act } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { Board } from '../Board'
 
@@ -9,27 +9,33 @@ const mockStoriesApi = global.mockStoriesApi
 
 // Helper functions for drag and drop testing
 const simulateDragStart = (activeId) => {
-  const callbacks = global.dndCallbacks
-  if (callbacks?.onDragStart) {
-    callbacks.onDragStart({ active: { id: activeId } })
-  }
+  act(() => {
+    const callbacks = global.dndCallbacks
+    if (callbacks?.onDragStart) {
+      callbacks.onDragStart({ active: { id: activeId } })
+    }
+  })
 }
 
 const simulateDragOver = (activeId, overId) => {
-  const callbacks = global.dndCallbacks
-  if (callbacks?.onDragOver) {
-    callbacks.onDragOver({
-      active: { id: activeId },
-      over: { id: overId }
-    })
-  }
+  act(() => {
+    const callbacks = global.dndCallbacks
+    if (callbacks?.onDragOver) {
+      callbacks.onDragOver({
+        active: { id: activeId },
+        over: { id: overId }
+      })
+    }
+  })
 }
 
 const simulateDragEnd = () => {
-  const callbacks = global.dndCallbacks
-  if (callbacks?.onDragEnd) {
-    callbacks.onDragEnd({})
-  }
+  act(() => {
+    const callbacks = global.dndCallbacks
+    if (callbacks?.onDragEnd) {
+      callbacks.onDragEnd({})
+    }
+  })
 }
 
 describe('Board', () => {
@@ -264,7 +270,9 @@ describe('Board', () => {
       const storyContainer = storyCard.closest('.group')!
 
       // Simulate hover to show edit button
-      fireEvent.mouseEnter(storyContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyContainer)
+      })
 
       // Now find the edit button within this specific story
       await waitFor(() => {
@@ -293,7 +301,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyContainer)
+      })
 
       await waitFor(() => {
         const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
@@ -338,7 +348,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyCardContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyCardContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyCardContainer)
+      })
 
       await waitFor(() => {
         const deleteButton = storyCardContainer.querySelector('[title="Delete story"]')
@@ -360,7 +372,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyCardContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyCardContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyCardContainer)
+      })
 
       await waitFor(() => {
         const deleteButton = storyCardContainer.querySelector('[title="Delete story"]')
@@ -387,7 +401,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyCardContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyCardContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyCardContainer)
+      })
 
       await waitFor(() => {
         const deleteButton = storyCardContainer.querySelector('[title="Delete story"]')
@@ -491,7 +507,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyContainer)
+      })
 
       await waitFor(() => {
         const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
@@ -520,7 +538,9 @@ describe('Board', () => {
 
       const storyCard = screen.getByText('TODO Story')
       const storyCardContainer = storyCard.closest('.group')!
-      fireEvent.mouseEnter(storyCardContainer)
+      act(() => {
+        fireEvent.mouseEnter(storyCardContainer)
+      })
 
       await waitFor(() => {
         const deleteButton = storyCardContainer.querySelector('[title="Delete story"]')
