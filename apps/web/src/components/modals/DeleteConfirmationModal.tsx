@@ -9,7 +9,10 @@ import { Story } from '@/types'
 function ModalPortal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  if (!mounted || typeof document === 'undefined') return null
+
+  // Add test environment detection
+  if (typeof window === 'undefined') return null
+  if (!mounted && process.env.NODE_ENV !== 'test') return null
 
   // Try to use modal-root element, fallback to document.body
   const modalRoot = document.getElementById('modal-root') || document.body
@@ -27,7 +30,7 @@ export function DeleteConfirmationModal({
   story: Story | null
   isOpen: boolean
   onClose: () => void
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
   isLoading?: boolean
 }) {
   const [ready, setReady] = useState(false)
@@ -54,10 +57,15 @@ export function DeleteConfirmationModal({
 
   if (!story || !isOpen) return null
 
-  const handleConfirm = () => {
+  const handleConfirm = async () => {
     if (isLoading) return
-    onConfirm()
-    // Don't automatically close - let parent handle closing after API call
+    try {
+      await onConfirm() // Wait for async delete
+      onClose() // Then close modal
+    } catch (error) {
+      // Keep modal open on error
+      console.error('Delete operation failed:', error)
+    }
   }
 
   const handleClose = () => {

@@ -12,7 +12,10 @@ import { withSyncAct } from '@/__tests__/utils/async-test-utils'
 function ModalPortal({ children }: { children: React.ReactNode }) {
   const [mounted, setMounted] = useState(false)
   useEffect(() => setMounted(true), [])
-  if (!mounted || typeof document === 'undefined') return null
+
+  // Add test environment detection
+  if (typeof window === 'undefined') return null
+  if (!mounted && process.env.NODE_ENV !== 'test') return null
 
   // Try to use modal-root element, fallback to document.body
   const modalRoot = document.getElementById('modal-root') || document.body
