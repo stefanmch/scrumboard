@@ -337,6 +337,83 @@ describe('Story Workflows Integration', () => {
       confirmSpy.mockRestore()
     })
 
+    it('should properly validate form fields and disable save for placeholder content', async () => {
+      const user = userEvent.setup()
+
+      render(<Board />)
+
+      await waitFor(() => {
+        expect(screen.getByText('TODO Story')).toBeInTheDocument()
+      })
+
+      // Open edit modal
+      const storyCard = screen.getByText('TODO Story')
+      const storyCardContainer = storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
+
+      await waitFor(() => {
+        const editButton = within(storyCardContainer).getByTitle('Edit story')
+        expect(editButton).toBeInTheDocument()
+      })
+
+      const editButton = within(storyCardContainer).getByTitle('Edit story')
+      await user.click(editButton)
+
+      // Wait for modal to fully load with existing valid data
+      await waitFor(() => {
+        expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('First story description')).toBeInTheDocument()
+      })
+
+      // Initially save button should be enabled with valid data
+      let saveButton = screen.getByText('Save Changes')
+      expect(saveButton).toBeEnabled()
+
+      // Test 1: Change title to placeholder content - save should be disabled
+      const titleInput = screen.getByDisplayValue('TODO Story')
+      await user.clear(titleInput)
+      await user.type(titleInput, 'New Story')
+
+      await waitFor(() => {
+        expect(saveButton).toBeDisabled()
+      })
+
+      // Test 2: Change title back to valid content - save should be enabled again
+      await user.clear(titleInput)
+      await user.type(titleInput, 'Valid Story Title')
+
+      await waitFor(() => {
+        expect(saveButton).toBeEnabled()
+      })
+
+      // Test 3: Change description to placeholder content - save should be disabled
+      const descriptionInput = screen.getByDisplayValue('First story description')
+      await user.clear(descriptionInput)
+      await user.type(descriptionInput, 'Add your story description here...')
+
+      await waitFor(() => {
+        expect(saveButton).toBeDisabled()
+      })
+
+      // Test 4: Both fields with valid content - save should be enabled
+      await user.clear(descriptionInput)
+      await user.type(descriptionInput, 'Valid description content')
+
+      await waitFor(() => {
+        expect(saveButton).toBeEnabled()
+      })
+
+      // Test 5: Empty fields should also disable save
+      await user.clear(titleInput)
+
+      await waitFor(() => {
+        expect(saveButton).toBeDisabled()
+      })
+
+      // No API call should be made when save is disabled
+      expect(mockStoriesApi.update).not.toHaveBeenCalled()
+    })
+
     it('should handle save errors gracefully', async () => {
       const user = userEvent.setup()
       mockStoriesApi.update.mockRejectedValue(new Error('Update failed'))
@@ -360,26 +437,45 @@ describe('Story Workflows Integration', () => {
       const editButton = within(storyCardContainer).getByTitle('Edit story')
       await user.click(editButton)
 
+      // Wait for modal to fully load with existing data
       await waitFor(() => {
         expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
+        expect(screen.getByDisplayValue('First story description')).toBeInTheDocument()
       })
 
-      // Make changes and try to save
+      // Make changes to both title and description to ensure valid form state
       const titleInput = screen.getByDisplayValue('TODO Story')
       await user.clear(titleInput)
       await user.type(titleInput, 'Updated Title')
 
+      const descriptionInput = screen.getByDisplayValue('First story description')
+      await user.clear(descriptionInput)
+      await user.type(descriptionInput, 'Updated description for testing error handling')
+
+      // Wait for save button to be enabled after making changes
       const saveButton = screen.getByText('Save Changes')
+      await waitFor(() => {
+        expect(saveButton).toBeEnabled()
+      }, { timeout: 2000 })
+
+      // Now click the save button
       await user.click(saveButton)
 
       // Should handle error and keep modal open
       await waitFor(() => {
-        expect(mockStoriesApi.update).toHaveBeenCalled()
+        expect(mockStoriesApi.update).toHaveBeenCalledWith(
+          'story-1',
+          expect.objectContaining({
+            title: 'Updated Title',
+            description: 'Updated description for testing error handling'
+          })
+        )
       })
 
       // Modal should remain open after error
       expect(screen.getByText('Edit Story')).toBeInTheDocument()
       expect(screen.getByDisplayValue('Updated Title')).toBeInTheDocument()
+      expect(screen.getByDisplayValue('Updated description for testing error handling')).toBeInTheDocument()
     })
   })
 
