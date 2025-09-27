@@ -9,7 +9,7 @@ describe('DeleteConfirmationModal', () => {
   setupModalTestEnvironment()
 
   const mockOnClose = jest.fn()
-  const mockOnConfirm = jest.fn()
+  const mockOnConfirm = jest.fn().mockResolvedValue(undefined)
   const mockStory = createMockStory({
     title: 'Story to Delete',
     description: 'This story will be deleted',
@@ -216,8 +216,10 @@ describe('DeleteConfirmationModal', () => {
       const deleteButton = screen.getByRole('button', { name: 'Delete Story' })
       await user.click(deleteButton)
 
-      expect(mockOnConfirm).toHaveBeenCalled()
-      expect(mockOnClose).toHaveBeenCalled()
+      await waitFor(() => {
+        expect(mockOnConfirm).toHaveBeenCalled()
+        expect(mockOnClose).toHaveBeenCalled()
+      })
     })
 
     it('should call onClose when cancel button is clicked', async () => {
