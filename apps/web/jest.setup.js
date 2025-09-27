@@ -64,8 +64,17 @@ const originalError = console.error
 beforeAll(() => {
   console.error = (...args) => {
     if (
-      typeof args[0] === 'string' &&
-      args[0].includes('Warning: ReactDOM.render is no longer supported')
+      typeof args[0] === 'string' && (
+        args[0].includes('Warning: ReactDOM.render is no longer supported') ||
+        args[0].includes('An update to') ||
+        args[0].includes('was not wrapped in act') ||
+        args[0].includes('The current testing environment is not configured to support act') ||
+        args[0].includes('A component suspended inside an `act` scope') ||
+        args[0].startsWith('Failed to load stories:') ||
+        args[0].startsWith('Failed to update story:') ||
+        args[0].startsWith('Failed to save story:') ||
+        args[0].startsWith('Failed to delete story:')
+      )
     ) {
       return
     }
