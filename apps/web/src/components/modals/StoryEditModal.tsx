@@ -304,17 +304,17 @@ export function StoryEditModal({
                   </label>
                   <select
                     id="storyPoints"
-                    value={formData.storyPoints || story?.storyPoints || 1}
+                    value={String(formData.storyPoints ?? story?.storyPoints ?? 1)}
                     onChange={e => handleInputChange('storyPoints', parseInt(e.target.value))}
                     className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
                   >
-                    <option value={1}>1 point</option>
-                    <option value={2}>2 points</option>
-                    <option value={3}>3 points</option>
-                    <option value={5}>5 points</option>
-                    <option value={8}>8 points</option>
-                    <option value={13}>13 points</option>
-                    <option value={21}>21 points</option>
+                    <option value="1">1 point</option>
+                    <option value="2">2 points</option>
+                    <option value="3">3 points</option>
+                    <option value="5">5 points</option>
+                    <option value="8">8 points</option>
+                    <option value="13">13 points</option>
+                    <option value="21">21 points</option>
                   </select>
                 </div>
                 <div>

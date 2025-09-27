@@ -238,7 +238,13 @@ describe('Story Workflows Integration', () => {
       // Step 4: Modify the form
       const titleInput = screen.getByDisplayValue('TODO Story')
       const descriptionInput = screen.getByDisplayValue('First story description')
-      const storyPointsSelect = screen.getByDisplayValue('3')
+
+      // Wait for story points select to be populated
+      const storyPointsSelect = await waitFor(() => {
+        const select = screen.getByLabelText(/Story Points/i) as HTMLSelectElement
+        expect(select.value).toBe('3')
+        return select
+      }, { timeout: 2000 })
       const assigneeInput = screen.getByDisplayValue('')
 
       await user.clear(titleInput)
