@@ -394,29 +394,32 @@ describe('Story Workflows Integration', () => {
         expect(screen.getByText('TODO Story')).toBeInTheDocument()
       })
 
-      // Step 1: Hover over story to reveal delete button
+      // Step 1: Hover over specific story to reveal delete button
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('[data-testid="story-card"]') || storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
-      // Step 2: Click delete button
+      // Step 2: Click delete button using scoped selector to avoid ambiguity
       await waitFor(() => {
-        const deleteButton = screen.getByTitle('Delete story')
+        const deleteButton = within(storyCardContainer).getByTitle('Delete story')
         expect(deleteButton).toBeInTheDocument()
       })
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const deleteButton = within(storyCardContainer).getByTitle('Delete story')
       await user.click(deleteButton)
 
       // Step 3: Confirmation modal should open
       await waitFor(() => {
-        expect(screen.getByText('Delete Story')).toBeInTheDocument()
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Delete Story' })).toBeInTheDocument()
       })
 
-      expect(screen.getByText('Are you sure you want to delete this story?')).toBeInTheDocument()
-      expect(screen.getByText('TODO Story')).toBeInTheDocument() // Story preview
+      const modal = screen.getByRole('dialog')
+      expect(within(modal).getByText(/Are you sure you want to delete this story/)).toBeInTheDocument()
+      expect(within(modal).getByText('TODO Story')).toBeInTheDocument() // Story preview
 
       // Step 4: Confirm deletion
-      const confirmDeleteButton = screen.getByRole('button', { name: /Delete Story/i })
+      const confirmDeleteButton = within(modal).getByRole('button', { name: /Delete Story/i })
       await user.click(confirmDeleteButton)
 
       // Step 5: Verify API call
@@ -426,7 +429,7 @@ describe('Story Workflows Integration', () => {
 
       // Step 6: Modal should close
       await waitFor(() => {
-        expect(screen.queryByText('Delete Story')).not.toBeInTheDocument()
+        expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
       })
     })
 
@@ -486,21 +489,24 @@ describe('Story Workflows Integration', () => {
 
       // Attempt deletion
       const storyCard = screen.getByText('TODO Story')
-      fireEvent.mouseEnter(storyCard.closest('.group')!)
+      const storyCardContainer = storyCard.closest('[data-testid="story-card"]') || storyCard.closest('.group')!
+      fireEvent.mouseEnter(storyCardContainer)
 
       await waitFor(() => {
-        const deleteButton = screen.getByTitle('Delete story')
+        const deleteButton = within(storyCardContainer).getByTitle('Delete story')
         expect(deleteButton).toBeInTheDocument()
       })
 
-      const deleteButton = screen.getByTitle('Delete story')
+      const deleteButton = within(storyCardContainer).getByTitle('Delete story')
       await user.click(deleteButton)
 
       await waitFor(() => {
-        expect(screen.getByText('Delete Story')).toBeInTheDocument()
+        expect(screen.getByRole('dialog')).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Delete Story' })).toBeInTheDocument()
       })
 
-      const confirmDeleteButton = screen.getByRole('button', { name: /Delete Story/i })
+      const modal = screen.getByRole('dialog')
+      const confirmDeleteButton = within(modal).getByRole('button', { name: /Delete Story/i })
       await user.click(confirmDeleteButton)
 
       // Should handle error gracefully
@@ -508,8 +514,9 @@ describe('Story Workflows Integration', () => {
         expect(mockStoriesApi.delete).toHaveBeenCalled()
       })
 
-      // Story should remain in UI (error handling)
-      expect(screen.getByText('TODO Story')).toBeInTheDocument()
+      // Story should remain in UI after error (check that it's still on the board, not just in modal)
+      // At this point the modal should still be open, so we need to check for the story outside the modal
+      expect(screen.getAllByText('TODO Story')).toHaveLength(2) // One in modal, one on board
     })
   })
 

@@ -625,7 +625,6 @@ function BoardContent() {
         ...col,
         stories: col.stories.filter(s => s.id !== deletingStory.id),
       })))
-      setDeletingStory(null)
       return
     }
 
@@ -644,13 +643,17 @@ function BoardContent() {
       'delete story'
     )
 
-    // Only close modal and show success if deletion was successful
+    // Show success message if deletion was successful
     if (result !== null) {
-      setDeletingStory(null)
       toast.showSuccess('Story deleted successfully')
     }
     // If result is null, the error was handled by withOptimisticUpdate
-    // and the modal remains open for user to retry or cancel
+    // Modal will remain open for user to retry or cancel
+
+    // Throw error if deletion failed so modal can handle it
+    if (result === null) {
+      throw new Error('Delete operation failed')
+    }
   }
 
   const handleCancelDelete = () => {
