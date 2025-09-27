@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, createContext, useContext, ReactNode } from 'react'
+import React, { useState, useEffect, createContext, useContext, ReactNode, useRef, useCallback } from 'react'
 import { ApiError } from '@/lib/api'
 
 export type ToastType = 'success' | 'error' | 'warning' | 'info'
@@ -45,8 +45,20 @@ interface ToastProviderProps {
 
 export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
   const [toasts, setToasts] = useState<Toast[]>([])
+  const timersRef = useRef<Map<string, NodeJS.Timeout>>(new Map())
 
-  const addToast = (toast: Omit<Toast, 'id'>): string => {
+  const removeToast = useCallback((id: string) => {
+    // Clear associated timer
+    const timer = timersRef.current.get(id)
+    if (timer) {
+      clearTimeout(timer)
+      timersRef.current.delete(id)
+    }
+
+    setToasts(prev => prev.filter(toast => toast.id !== id))
+  }, [])
+
+  const addToast = useCallback((toast: Omit<Toast, 'id'>): string => {
     const id = crypto.randomUUID()
     const newToast: Toast = {
       id,
@@ -59,25 +71,28 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
       return updated
     })
 
-    // Auto-remove toast after duration
+    // Auto-remove toast after duration with proper timer tracking
     if (newToast.duration && newToast.duration > 0) {
-      setTimeout(() => {
+      const timer = setTimeout(() => {
         removeToast(id)
       }, newToast.duration)
+
+      // Track timer for cleanup
+      timersRef.current.set(id, timer)
     }
 
     return id
-  }
+  }, [maxToasts, removeToast])
 
-  const removeToast = (id: string) => {
-    setToasts(prev => prev.filter(toast => toast.id !== id))
-  }
+  const clearAllToasts = useCallback(() => {
+    // Clear all active timers
+    timersRef.current.forEach((timer) => clearTimeout(timer))
+    timersRef.current.clear()
 
-  const clearAllToasts = () => {
     setToasts([])
-  }
+  }, [])
 
-  const showError = (error: Error | ApiError | string, title?: string): string => {
+  const showError = useCallback((error: Error | ApiError | string, title?: string): string => {
     let message: string
     let actionTitle = title || 'Error'
 
@@ -96,36 +111,36 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
       message,
       duration: 8000, // Longer duration for errors
     })
-  }
+  }, [addToast])
 
-  const showSuccess = (message: string, title?: string): string => {
+  const showSuccess = useCallback((message: string, title?: string): string => {
     return addToast({
       type: 'success',
       title: title || 'Success',
       message,
       duration: 4000,
     })
-  }
+  }, [addToast])
 
-  const showWarning = (message: string, title?: string): string => {
+  const showWarning = useCallback((message: string, title?: string): string => {
     return addToast({
       type: 'warning',
       title: title || 'Warning',
       message,
       duration: 6000,
     })
-  }
+  }, [addToast])
 
-  const showInfo = (message: string, title?: string): string => {
+  const showInfo = useCallback((message: string, title?: string): string => {
     return addToast({
       type: 'info',
       title: title || 'Info',
       message,
       duration: 5000,
     })
-  }
+  }, [addToast])
 
-  const value: ToastContextType = {
+  const value: ToastContextType = React.useMemo(() => ({
     toasts,
     addToast,
     removeToast,
@@ -134,7 +149,15 @@ export function ToastProvider({ children, maxToasts = 5 }: ToastProviderProps) {
     showSuccess,
     showWarning,
     showInfo,
-  }
+  }), [toasts, addToast, removeToast, clearAllToasts, showError, showSuccess, showWarning, showInfo])
+
+  // Cleanup all timers on unmount
+  useEffect(() => {
+    return () => {
+      timersRef.current.forEach((timer) => clearTimeout(timer))
+      timersRef.current.clear()
+    }
+  }, [])
 
   return (
     <ToastContext.Provider value={value}>
@@ -164,19 +187,37 @@ interface ToastItemProps {
 function ToastItem({ toast, onRemove }: ToastItemProps) {
   const [isVisible, setIsVisible] = useState(false)
   const [isLeaving, setIsLeaving] = useState(false)
+  const animationTimerRef = useRef<NodeJS.Timeout | null>(null)
+  const exitTimerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     // Trigger entrance animation
-    const timer = setTimeout(() => setIsVisible(true), 10)
-    return () => clearTimeout(timer)
+    animationTimerRef.current = setTimeout(() => setIsVisible(true), 10)
+    return () => {
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current)
+      }
+    }
   }, [])
 
-  const handleRemove = () => {
-    setIsLeaving(true)
-    setTimeout(() => onRemove(toast.id), 300)
-  }
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (animationTimerRef.current) {
+        clearTimeout(animationTimerRef.current)
+      }
+      if (exitTimerRef.current) {
+        clearTimeout(exitTimerRef.current)
+      }
+    }
+  }, [])
 
-  const getToastStyles = () => {
+  const handleRemove = useCallback(() => {
+    setIsLeaving(true)
+    exitTimerRef.current = setTimeout(() => onRemove(toast.id), 300)
+  }, [toast.id, onRemove])
+
+  const getToastStyles = useCallback(() => {
     const baseClasses = 'p-4 rounded-lg shadow-lg border transition-all duration-300 transform'
     const visibilityClasses = isLeaving
       ? 'opacity-0 translate-x-full scale-95'
@@ -196,9 +237,9 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       default:
         return `${baseClasses} ${visibilityClasses} bg-gray-50 border-gray-200 text-gray-800`
     }
-  }
+  }, [isLeaving, isVisible, toast.type])
 
-  const getIcon = () => {
+  const getIcon = useCallback(() => {
     const iconClasses = 'w-5 h-5 flex-shrink-0'
 
     switch (toast.type) {
@@ -229,10 +270,15 @@ function ToastItem({ toast, onRemove }: ToastItemProps) {
       default:
         return null
     }
-  }
+  }, [toast.type])
 
   return (
-    <div className={getToastStyles()}>
+    <div
+      role="alert"
+      aria-live="polite"
+      aria-atomic="true"
+      className={getToastStyles()}
+    >
       <div className="flex items-start gap-3">
         {getIcon()}
         <div className="flex-1 min-w-0">

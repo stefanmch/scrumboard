@@ -1,23 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createPortal } from 'react-dom'
 import { X, AlertTriangle, Trash2 } from 'lucide-react'
+import { ModalPortal } from './ModalPortal'
 import { Story } from '@/types'
 
-// --- Modal Portal ---
-function ModalPortal({ children }: { children: React.ReactNode }) {
-  const [mounted, setMounted] = useState(false)
-  useEffect(() => setMounted(true), [])
-
-  // Add test environment detection
-  if (typeof window === 'undefined') return null
-  if (!mounted && process.env.NODE_ENV !== 'test') return null
-
-  // Try to use modal-root element, fallback to document.body
-  const modalRoot = document.getElementById('modal-root') || document.body
-  return createPortal(children, modalRoot)
-}
+// Modal Portal is now imported from ./ModalPortal
 
 // --- Delete Confirmation Modal ---
 export function DeleteConfirmationModal({
