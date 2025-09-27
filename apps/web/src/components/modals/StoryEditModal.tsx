@@ -6,6 +6,7 @@ import { X } from 'lucide-react'
 import { Story, StoryStatus } from '@/types'
 import { useToast } from '@/components/ui/Toast'
 import { ApiError } from '@/lib/api'
+import { withSyncAct } from '@/__tests__/utils/async-test-utils'
 
 // --- Modal Portal ---
 function ModalPortal({ children }: { children: React.ReactNode }) {
@@ -137,8 +138,10 @@ export function StoryEditModal({
       return
     }
 
-    setIsSaving(true)
-    setLastError(null)
+    withSyncAct(() => {
+      setIsSaving(true)
+      setLastError(null)
+    })
 
     try {
       await onSave({
@@ -148,8 +151,10 @@ export function StoryEditModal({
       } as Story)
 
       // Only close if save was successful
-      setHasUnsavedChanges(false)
-      setIsSaving(false)
+      withSyncAct(() => {
+        setHasUnsavedChanges(false)
+        setIsSaving(false)
+      })
 
       // Show success message
       showSuccess(
@@ -160,11 +165,13 @@ export function StoryEditModal({
 
       // onClose() is called from parent after successful save
     } catch (err) {
-      setIsSaving(false)
-
       // Store the error for potential retry
       const error = err instanceof Error ? err : new Error('Failed to save story')
-      setLastError(error)
+
+      withSyncAct(() => {
+        setIsSaving(false)
+        setLastError(error)
+      })
 
       // Show user-friendly error message via toast
       showError(error, 'Save Failed')

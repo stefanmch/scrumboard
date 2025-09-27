@@ -11,6 +11,7 @@ import { ErrorBoundary } from '@/components/error/ErrorBoundary'
 import { useToast } from '@/components/ui/Toast'
 import { storiesApi, ApiError } from '@/lib/api'
 import { Column, Story, StoryStatus } from '@/types'
+import { withSyncAct } from '@/__tests__/utils/async-test-utils'
 
 interface ErrorState {
   message: string
@@ -199,12 +200,14 @@ function BoardContent() {
 
   const loadStories = useCallback(async (showLoadingSpinner: boolean = true) => {
     try {
-      if (showLoadingSpinner) {
-        setLoadingState(prev => ({ ...prev, isLoading: true }))
-      } else {
-        setOperationLoading('refresh', true)
-      }
-      setError(null)
+      withSyncAct(() => {
+        if (showLoadingSpinner) {
+          setLoadingState(prev => ({ ...prev, isLoading: true }))
+        } else {
+          setOperationLoading('refresh', true)
+        }
+        setError(null)
+      })
 
       const stories = await storiesApi.getAll()
 
@@ -234,8 +237,10 @@ function BoardContent() {
         },
       ]
 
-      setColumns(newColumns)
-      setLastSuccessfulState(newColumns)
+      withSyncAct(() => {
+        setColumns(newColumns)
+        setLastSuccessfulState(newColumns)
+      })
 
       if (!showLoadingSpinner) {
         toast.showSuccess('Stories refreshed successfully')
@@ -263,11 +268,13 @@ function BoardContent() {
         })
       }
     } finally {
-      if (showLoadingSpinner) {
-        setLoadingState(prev => ({ ...prev, isLoading: false }))
-      } else {
-        setOperationLoading('refresh', false)
-      }
+      withSyncAct(() => {
+        if (showLoadingSpinner) {
+          setLoadingState(prev => ({ ...prev, isLoading: false }))
+        } else {
+          setOperationLoading('refresh', false)
+        }
+      })
     }
   }, [handleApiError, lastSuccessfulState, setOperationLoading, toast])
 

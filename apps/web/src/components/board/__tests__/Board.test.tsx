@@ -641,12 +641,16 @@ describe('Board', () => {
         expect(screen.getByRole('heading', { name: 'Create Story' })).toBeInTheDocument()
       })
 
-      // Close without saving (creates a draft)
+      // Clear mock to ensure we only check calls from this specific action
+      // This prevents potential test pollution from other tests
+      mockStoriesApi.delete.mockClear()
+
+      // Close without saving (removes draft from local state only)
       const closeButton = screen.getByLabelText('Close modal')
       await user.click(closeButton)
 
-      // Since we don't have a direct way to test draft deletion,
-      // we verify that no API call was made
+      // Verify that draft deletion only updates local state, no API call
+      // Draft stories (id starts with 'draft-') should never trigger API delete
       expect(mockStoriesApi.delete).not.toHaveBeenCalled()
     })
   })
