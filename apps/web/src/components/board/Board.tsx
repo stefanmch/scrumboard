@@ -234,12 +234,13 @@ function BoardContent() {
 
       // Group stories by status with single iteration
       const groupedStories = stories.reduce((acc, story) => {
-        if (!acc[story.status]) {
-          acc[story.status] = []
-        }
         acc[story.status].push(story)
         return acc
-      }, {} as Record<StoryStatus, Story[]>)
+      }, {
+        TODO: [],
+        IN_PROGRESS: [],
+        DONE: []
+      } as Record<StoryStatus, Story[]>)
 
       // Sort each group by rank
       const todoStories = (groupedStories['TODO'] || []).sort((a, b) => a.rank - b.rank)
