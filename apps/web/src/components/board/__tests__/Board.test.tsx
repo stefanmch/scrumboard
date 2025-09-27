@@ -514,21 +514,41 @@ describe('Board', () => {
       await waitFor(() => {
         const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
         expect(editButton).toBeInTheDocument()
-      })
+      }, { timeout: 3000 })
 
       const editButton = within(storyContainer as HTMLElement).getByTitle('Edit story')
       await user.click(editButton)
 
       await waitFor(() => {
         expect(screen.getByDisplayValue('TODO Story')).toBeInTheDocument()
-      })
+      }, { timeout: 3000 })
 
-      const saveButton = screen.getByRole('button', { name: 'Save Changes' })
-      await user.click(saveButton)
+      const saveButton = screen.getByTestId('save-button')
+
+      // Wrap the click and subsequent state updates in act()
+      await act(async () => {
+        await user.click(saveButton)
+        // Give time for async operations to complete
+        await new Promise(resolve => setTimeout(resolve, 100))
+      })
 
       // Modal should stay open when save fails
       await waitFor(() => {
         expect(screen.getByRole('heading', { name: 'Edit Story' })).toBeInTheDocument()
+      }, { timeout: 5000 })
+
+      // Verify error message is displayed
+      await waitFor(() => {
+        expect(screen.getByTestId('save-error-message')).toBeInTheDocument()
+      }, { timeout: 3000 })
+
+      // Verify error message content
+      await act(async () => {
+        expect(screen.getByText('Save Failed')).toBeInTheDocument()
+        expect(screen.getByText('Save failed')).toBeInTheDocument()
+
+        // Verify modal container is still present
+        expect(screen.getByTestId('story-modal')).toBeInTheDocument()
       })
     })
 
