@@ -1,5 +1,5 @@
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { StoryEditModal } from '../StoryEditModal'
 import { createMockStory } from '@/__tests__/utils/test-utils'
@@ -33,6 +33,13 @@ describe('StoryEditModal', () => {
   beforeEach(() => {
     jest.clearAllMocks()
     mockOnSave.mockResolvedValue(undefined)
+    // Mock window.confirm for unsaved changes tests
+    jest.spyOn(window, 'confirm').mockReturnValue(true)
+  })
+
+  afterEach(() => {
+    // Restore window.confirm mock
+    jest.restoreAllMocks()
   })
 
   describe('Modal Rendering', () => {
@@ -436,7 +443,8 @@ describe('StoryEditModal', () => {
         />
       )
 
-      const cancelButton = screen.getByText('Cancel')
+      const modal = screen.getByRole('dialog')
+      const cancelButton = within(modal).getByText('Cancel')
       await user.click(cancelButton)
 
       expect(mockOnClose).toHaveBeenCalled()
