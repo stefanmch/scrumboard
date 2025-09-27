@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import { DndContext, DragOverlay, DragOverEvent, DragStartEvent } from '@dnd-kit/core'
 import { arrayMove } from '@dnd-kit/sortable'
 import { BoardColumn } from './BoardColumn'
@@ -38,6 +38,27 @@ function BoardContent() {
   const [autoRecoveryAttempts, setAutoRecoveryAttempts] = useState(0)
 
   const toast = useToast()
+
+  // Memoized helper functions for expensive lookups
+  const storyLookup = useMemo(() => {
+    const lookup = new Map<string, Story>()
+    columns.forEach(column => {
+      column.stories.forEach(story => {
+        lookup.set(story.id, story)
+      })
+    })
+    return lookup
+  }, [columns])
+
+  const columnByStoryLookup = useMemo(() => {
+    const lookup = new Map<string, Column>()
+    columns.forEach(column => {
+      column.stories.forEach(story => {
+        lookup.set(story.id, column)
+      })
+    })
+    return lookup
+  }, [columns])
 
   // Helper function to set operation loading state
   const setOperationLoading = useCallback((operation: string, isLoading: boolean) => {
@@ -211,10 +232,20 @@ function BoardContent() {
 
       const stories = await storiesApi.getAll()
 
-      // Group stories by status
-      const todoStories = stories.filter(s => s.status === 'TODO').sort((a, b) => a.rank - b.rank)
-      const inProgressStories = stories.filter(s => s.status === 'IN_PROGRESS').sort((a, b) => a.rank - b.rank)
-      const doneStories = stories.filter(s => s.status === 'DONE').sort((a, b) => a.rank - b.rank)
+      // Group stories by status with single iteration
+      const groupedStories = stories.reduce((acc, story) => {
+        acc[story.status].push(story)
+        return acc
+      }, {
+        TODO: [],
+        IN_PROGRESS: [],
+        DONE: []
+      } as Record<StoryStatus, Story[]>)
+
+      // Sort each group by rank
+      const todoStories = (groupedStories['TODO'] || []).sort((a, b) => a.rank - b.rank)
+      const inProgressStories = (groupedStories['IN_PROGRESS'] || []).sort((a, b) => a.rank - b.rank)
+      const doneStories = (groupedStories['DONE'] || []).sort((a, b) => a.rank - b.rank)
 
       const newColumns = [
         {
@@ -325,28 +356,22 @@ function BoardContent() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []) // Run only once on mount
 
-  const findStoryById = (storyId: string): Story | null => {
-    for (const column of columns) {
-      const story = column.stories.find(s => s.id === storyId)
-      if (story) return story
-    }
-    return null
-  }
+  // Optimized lookup functions using memoized maps
+  const findStoryById = useCallback((storyId: string): Story | null => {
+    return storyLookup.get(storyId) || null
+  }, [storyLookup])
 
-  const findColumnByStoryId = (storyId: string): Column | null => {
-    for (const column of columns) {
-      if (column.stories.some(s => s.id === storyId)) return column
-    }
-    return null
-  }
+  const findColumnByStoryId = useCallback((storyId: string): Column | null => {
+    return columnByStoryLookup.get(storyId) || null
+  }, [columnByStoryLookup])
 
-  const handleDragStart = (event: DragStartEvent) => {
+  const handleDragStart = useCallback((event: DragStartEvent) => {
     const { active } = event
     const story = findStoryById(active.id as string)
     setActiveStory(story)
-  }
+  }, [findStoryById])
 
-  const handleDragOver = async (event: DragOverEvent) => {
+  const handleDragOver = useCallback(async (event: DragOverEvent) => {
     const { active, over } = event
     if (!over) return
 
@@ -453,18 +478,18 @@ function BoardContent() {
         )
       }
     }
-  }
+  }, [columns, findStoryById, findColumnByStoryId, withOptimisticUpdate])
 
-  const handleDragEnd = () => {
+  const handleDragEnd = useCallback(() => {
     setActiveStory(null)
-  }
+  }, [])
 
-  const handleEditStory = (story: Story) => {
+  const handleEditStory = useCallback((story: Story) => {
     // next microtask to avoid backdrop close race
     Promise.resolve().then(() => setEditingStory(story))
-  }
+  }, [])
 
-  const handleSaveStory = async (updatedStory: Story) => {
+  const handleSaveStory = useCallback(async (updatedStory: Story) => {
     const isDraft = updatedStory.id.startsWith('draft-')
     const operation = isDraft ? 'create' : 'update'
 
@@ -483,23 +508,23 @@ function BoardContent() {
           assigneeId: updatedStory.assigneeId,
         })
 
-        // Replace draft story with saved story
+        // Replace draft story with saved story in a single state update
         setColumns(prev => {
-          // First, remove the draft story from all columns
-          const columnsWithoutDraft = prev.map(col => ({
-            ...col,
-            stories: col.stories.filter(s => s.id !== updatedStory.id),
-          }))
-
-          // Then, add the saved story to the correct column based on its status
-          const newColumns = columnsWithoutDraft.map(col => {
+          const newColumns = prev.map(col => {
             if (col.status === savedStory.status) {
               return {
                 ...col,
-                stories: [...col.stories, savedStory],
+                stories: [
+                  ...col.stories.filter(s => s.id !== updatedStory.id),
+                  savedStory
+                ],
+              }
+            } else {
+              return {
+                ...col,
+                stories: col.stories.filter(s => s.id !== updatedStory.id),
               }
             }
-            return col
           })
 
           // Update successful state with the new columns
@@ -551,9 +576,9 @@ function BoardContent() {
     } finally {
       setOperationLoading(`save-${updatedStory.id}`, false)
     }
-  }
+  }, [handleApiError, setOperationLoading, toast])
 
-  const handleCloseModal = () => {
+  const handleCloseModal = useCallback(() => {
     if (editingStory && editingStory.id.startsWith('draft-')) {
       // Remove draft story from local state if user cancels
       setColumns(prev => prev.map(col => ({
@@ -562,9 +587,9 @@ function BoardContent() {
       })));
     }
     setEditingStory(null)
-  }
+  }, [editingStory])
 
-  const handleAddStory = (columnStatus: StoryStatus) => {
+  const handleAddStory = useCallback((columnStatus: StoryStatus) => {
     const target = columns.find(c => c.status === columnStatus)
     if (!target) return
 
@@ -608,13 +633,13 @@ function BoardContent() {
 
     // Open edit modal for the draft story
     setEditingStory(draftStory);
-  }
+  }, [columns])
 
-  const handleDeleteStory = (storyToDelete: Story) => {
+  const handleDeleteStory = useCallback((storyToDelete: Story) => {
     setDeletingStory(storyToDelete);
-  }
+  }, [])
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deletingStory) return
 
     const isDraft = deletingStory.id.startsWith('draft-')
@@ -654,11 +679,16 @@ function BoardContent() {
     if (result === null) {
       throw new Error('Delete operation failed')
     }
-  }
+  }, [deletingStory, withOptimisticUpdate, toast])
 
-  const handleCancelDelete = () => {
+  const handleCancelDelete = useCallback(() => {
     setDeletingStory(null);
-  }
+  }, [])
+
+  // Memoized values to prevent unnecessary re-renders
+  const hasOperations = useMemo(() => loadingState.operations.size > 0, [loadingState.operations.size])
+  const isRefreshing = useMemo(() => loadingState.operations.has('refresh'), [loadingState.operations])
+  const hasError = useMemo(() => error && error.type !== 'load', [error])
 
   // Show loading state
   if (loadingState.isLoading) {
@@ -691,10 +721,10 @@ function BoardContent() {
           <div className="flex gap-3">
             <button
               onClick={() => loadStories()}
-              disabled={loadingState.operations.has('refresh')}
+              disabled={isRefreshing}
               className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
             >
-              {loadingState.operations.has('refresh') && (
+              {isRefreshing && (
                 <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
               )}
               Retry
@@ -755,7 +785,7 @@ function BoardContent() {
           <div className="mb-8 flex items-center justify-between">
             <div>
               <p className="text-gray-600">Drag stories between columns, click to edit, or add new stories</p>
-              {error && error.type !== 'load' && (
+              {hasError && (
                 <div className="mt-2 p-3 bg-red-50 border border-red-200 rounded-lg">
                   <p className="text-sm text-red-700">{error.message}</p>
                   {error.isRetryable && (
@@ -771,7 +801,7 @@ function BoardContent() {
             </div>
 
             <div className="flex items-center gap-2">
-              {loadingState.operations.size > 0 && (
+              {hasOperations && (
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
                   <span>Syncing...</span>
@@ -780,11 +810,11 @@ function BoardContent() {
 
               <button
                 onClick={() => loadStories(false)}
-                disabled={loadingState.operations.has('refresh')}
+                disabled={isRefreshing}
                 className="px-3 py-2 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
                 title="Refresh stories"
               >
-                {loadingState.operations.has('refresh') ? (
+                {isRefreshing ? (
                   <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-600"></div>
                 ) : (
                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -59,6 +59,39 @@ global.IntersectionObserver = jest.fn().mockImplementation(() => ({
 // Mock scrollTo
 global.scrollTo = jest.fn()
 
+// Setup modal-root for all tests (ensures React Portal works)
+const setupModalRoot = () => {
+  // Remove existing modal-root if it exists
+  const existingModalRoot = document.getElementById('modal-root')
+  if (existingModalRoot) {
+    document.body.removeChild(existingModalRoot)
+  }
+
+  // Create fresh modal-root element
+  const modalRoot = document.createElement('div')
+  modalRoot.setAttribute('id', 'modal-root')
+  document.body.appendChild(modalRoot)
+
+  // Reset body overflow in case previous test left it modified
+  document.body.style.overflow = ''
+}
+
+// Setup modal environment before each test
+beforeEach(() => {
+  setupModalRoot()
+})
+
+// Cleanup after each test
+afterEach(() => {
+  // Clean up modal-root
+  const modalRoot = document.getElementById('modal-root')
+  if (modalRoot) {
+    document.body.removeChild(modalRoot)
+  }
+  // Reset body styles
+  document.body.style.overflow = ''
+})
+
 // Suppress specific console warnings in tests
 const originalError = console.error
 beforeAll(() => {
