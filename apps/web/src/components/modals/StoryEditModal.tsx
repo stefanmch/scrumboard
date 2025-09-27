@@ -314,7 +314,7 @@ export function StoryEditModal({
                     <option value="5">5 points</option>
                     <option value="8">8 points</option>
                     <option value="13">13 points</option>
-                    <option value={21}>21 points</option>
+                    <option value="21">21 points</option>
                   </select>
                 </div>
                 <div>
