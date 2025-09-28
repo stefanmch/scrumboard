@@ -1,67 +1,80 @@
-import { IsString, IsOptional, IsNumber, IsEnum, IsInt, Min, Max } from 'class-validator';
-import { StoryStatus, StoryType, Priority, RefinementStatus } from '@prisma/client';
+import {
+  IsString,
+  IsOptional,
+  IsNumber,
+  IsEnum,
+  IsInt,
+  Min,
+  Max,
+} from 'class-validator'
+import {
+  StoryStatus,
+  StoryType,
+  Priority,
+  RefinementStatus,
+} from '@prisma/client'
 
 export class CreateStoryDto {
   @IsString()
-  title: string;
+  title: string
 
   @IsOptional()
   @IsString()
-  description?: string;
+  description?: string
 
   @IsOptional()
   @IsString()
-  acceptanceCriteria?: string;
+  acceptanceCriteria?: string
 
   @IsOptional()
   @IsInt()
   @Min(1)
   @Max(100)
-  storyPoints?: number;
+  storyPoints?: number
 
   @IsOptional()
   @IsEnum(Priority)
-  priority?: Priority;
+  priority?: Priority
 
   @IsOptional()
   @IsEnum(StoryStatus)
-  status?: StoryStatus;
+  status?: StoryStatus
 
   @IsOptional()
   @IsEnum(StoryType)
-  type?: StoryType;
+  type?: StoryType
 
   @IsOptional()
   @IsEnum(RefinementStatus)
-  refinementStatus?: RefinementStatus;
+  refinementStatus?: RefinementStatus
 
   @IsOptional()
   @IsString()
-  projectId?: string;
+  projectId?: string
 
   @IsOptional()
   @IsString()
-  sprintId?: string;
+  sprintId?: string
 
   @IsOptional()
   @IsString()
-  assigneeId?: string;
+  assigneeId?: string
 
   @IsOptional()
   @IsString()
-  creatorId?: string;
+  creatorId?: string
 
   @IsOptional()
   @IsString()
-  parentId?: string;
+  parentId?: string
 
   @IsOptional()
   @IsNumber()
   @Min(1)
   @Max(100)
-  businessValue?: number;
+  businessValue?: number
 
   @IsOptional()
   @IsString({ each: true })
-  tags?: string[];
+  tags?: string[]
 }

@@ -1,0 +1,905 @@
+{
+  "info": {
+    "name": "Scrumboard Authentication API",
+    "description": "Complete authentication API collection for the Scrumboard application with JWT-based authentication, user management, and session handling.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [
+          "// Auto-refresh access token if expired",
+          "const accessToken = pm.environment.get('accessToken');",
+          "const refreshToken = pm.environment.get('refreshToken');",
+          "",
+          "if (accessToken && refreshToken) {",
+          "    try {",
+          "        const payload = JSON.parse(atob(accessToken.split('.')[1]));",
+          "        const currentTime = Math.floor(Date.now() / 1000);",
+          "        const expirationTime = payload.exp;",
+          "        const fiveMinutes = 5 * 60;",
+          "        ",
+          "        // If token expires in less than 5 minutes, refresh it",
+          "        if (expirationTime - currentTime < fiveMinutes) {",
+          "            console.log('Access token expiring soon, refreshing...');",
+          "            ",
+          "            pm.sendRequest({",
+          "                url: pm.environment.get('baseUrl') + '/auth/refresh',",
+          "                method: 'POST',",
+          "                header: {",
+          "                    'Content-Type': 'application/json'",
+          "                },",
+          "                body: {",
+          "                    mode: 'raw',",
+          "                    raw: JSON.stringify({",
+          "                        refreshToken: refreshToken",
+          "                    })",
+          "                }",
+          "            }, function(err, response) {",
+          "                if (err) {",
+          "                    console.error('Token refresh failed:', err);",
+          "                } else if (response.code === 200) {",
+          "                    const responseJson = response.json();",
+          "                    pm.environment.set('accessToken', responseJson.accessToken);",
+          "                    pm.environment.set('refreshToken', responseJson.refreshToken);",
+          "                    console.log('Tokens refreshed successfully');",
+          "                } else {",
+          "                    console.error('Token refresh failed with status:', response.code);",
+          "                    pm.environment.unset('accessToken');",
+          "                    pm.environment.unset('refreshToken');",
+          "                }",
+          "            });",
+          "        }",
+          "    } catch (error) {",
+          "        console.error('Error parsing access token:', error);",
+          "    }",
+          "}"
+        ]
+      }
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "1. Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "    pm.response.to.have.status(201);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('id');",
+                  "    pm.expect(responseJson).to.have.property('email');",
+                  "    pm.expect(responseJson).to.have.property('name');",
+                  "    pm.expect(responseJson).to.have.property('role');",
+                  "    pm.expect(responseJson).to.have.property('emailVerified');",
+                  "    pm.expect(responseJson).to.have.property('isActive');",
+                  "});",
+                  "",
+                  "pm.test('Email verification is false for new user', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.emailVerified).to.be.false;",
+                  "});",
+                  "",
+                  "pm.test('User is active by default', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.isActive).to.be.true;",
+                  "});",
+                  "",
+                  "// Store user ID for later tests",
+                  "if (pm.response.code === 201) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.environment.set('userId', responseJson.id);",
+                  "    pm.environment.set('userEmail', responseJson.email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{$randomEmail}}\",\n  \"password\": \"password123\",\n  \"name\": \"{{$randomFirstName}} {{$randomLastName}}\",\n  \"role\": \"DEVELOPER\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Register a new user account. Requires email, password (min 8 chars), and name. Role is optional and defaults to MEMBER."
+          }
+        },
+        {
+          "name": "2. Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has authentication data', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('user');",
+                  "    pm.expect(responseJson).to.have.property('accessToken');",
+                  "    pm.expect(responseJson).to.have.property('refreshToken');",
+                  "    pm.expect(responseJson).to.have.property('expiresIn');",
+                  "    pm.expect(responseJson).to.have.property('tokenType');",
+                  "});",
+                  "",
+                  "pm.test('Token type is Bearer', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.tokenType).to.equal('Bearer');",
+                  "});",
+                  "",
+                  "pm.test('Expires in is 15 minutes (900 seconds)', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson.expiresIn).to.equal(900);",
+                  "});",
+                  "",
+                  "// Store tokens for subsequent requests",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.environment.set('accessToken', responseJson.accessToken);",
+                  "    pm.environment.set('refreshToken', responseJson.refreshToken);",
+                  "    pm.environment.set('userId', responseJson.user.id);",
+                  "    pm.environment.set('userEmail', responseJson.user.email);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Postman/{{$randomUserAgent}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"developer@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Authenticate user with email and password. Returns user data and JWT tokens."
+          }
+        },
+        {
+          "name": "3. Get Current User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has user data', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('id');",
+                  "    pm.expect(responseJson).to.have.property('email');",
+                  "    pm.expect(responseJson).to.have.property('name');",
+                  "    pm.expect(responseJson).to.have.property('role');",
+                  "});",
+                  "",
+                  "pm.test('Response does not contain sensitive data', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.not.have.property('password');",
+                  "    pm.expect(responseJson).to.not.have.property('passwordResetToken');",
+                  "    pm.expect(responseJson).to.not.have.property('refreshTokens');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Get current authenticated user information. Requires valid access token."
+          }
+        },
+        {
+          "name": "4. Refresh Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has new tokens', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('accessToken');",
+                  "    pm.expect(responseJson).to.have.property('refreshToken');",
+                  "    pm.expect(responseJson).to.have.property('expiresIn');",
+                  "    pm.expect(responseJson).to.have.property('tokenType');",
+                  "});",
+                  "",
+                  "pm.test('New tokens are different from old ones', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    const oldAccessToken = pm.environment.get('accessToken');",
+                  "    const oldRefreshToken = pm.environment.get('refreshToken');",
+                  "    ",
+                  "    pm.expect(responseJson.accessToken).to.not.equal(oldAccessToken);",
+                  "    pm.expect(responseJson.refreshToken).to.not.equal(oldRefreshToken);",
+                  "});",
+                  "",
+                  "// Update stored tokens",
+                  "if (pm.response.code === 200) {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.environment.set('accessToken', responseJson.accessToken);",
+                  "    pm.environment.set('refreshToken', responseJson.refreshToken);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "User-Agent",
+                "value": "Postman/{{$randomUserAgent}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Exchange refresh token for new access and refresh tokens."
+          }
+        },
+        {
+          "name": "5. Logout User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});",
+                  "",
+                  "// Clear stored tokens on successful logout",
+                  "if (pm.response.code === 204) {",
+                  "    pm.environment.unset('accessToken');",
+                  "    pm.environment.unset('refreshToken');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"{{refreshToken}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "logout"]
+            },
+            "description": "Logout user and revoke refresh tokens. Requires access token."
+          }
+        }
+      ],
+      "description": "Core authentication endpoints for login, logout, token management, and user info."
+    },
+    {
+      "name": "Email & Verification",
+      "item": [
+        {
+          "name": "Verify Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson.message).to.include('verified');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"email-verification-token-here\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify-email",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify-email"]
+            },
+            "description": "Verify user email address using verification token sent via email."
+          }
+        }
+      ],
+      "description": "Email verification endpoints."
+    },
+    {
+      "name": "Password Management",
+      "item": [
+        {
+          "name": "Forgot Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson.message).to.include('password reset');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"developer@example.com\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/forgot-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "forgot-password"]
+            },
+            "description": "Request password reset email. Always returns success for security."
+          }
+        },
+        {
+          "name": "Reset Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson.message).to.include('successfully reset');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"token\": \"password-reset-token-here\",\n  \"newPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/reset-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "reset-password"]
+            },
+            "description": "Reset password using reset token received via email."
+          }
+        },
+        {
+          "name": "Change Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response has success message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson.message).to.include('successfully changed');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"password123\",\n  \"newPassword\": \"newpassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/change-password",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "change-password"]
+            },
+            "description": "Change password for authenticated user. Requires current password and access token."
+          }
+        }
+      ],
+      "description": "Password management endpoints for forgot, reset, and change password."
+    },
+    {
+      "name": "Session Management",
+      "item": [
+        {
+          "name": "Get User Sessions",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "});",
+                  "",
+                  "pm.test('Response is an array', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.be.an('array');",
+                  "});",
+                  "",
+                  "pm.test('Sessions have required fields', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    if (responseJson.length > 0) {",
+                  "        const session = responseJson[0];",
+                  "        pm.expect(session).to.have.property('id');",
+                  "        pm.expect(session).to.have.property('ipAddress');",
+                  "        pm.expect(session).to.have.property('userAgent');",
+                  "        pm.expect(session).to.have.property('createdAt');",
+                  "        pm.expect(session).to.have.property('isActive');",
+                  "        ",
+                  "        // Store first session ID for revocation test",
+                  "        pm.environment.set('sessionId', session.id);",
+                  "    }",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/sessions",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "sessions"]
+            },
+            "description": "Get all active sessions for the authenticated user."
+          }
+        },
+        {
+          "name": "Revoke Session",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 204', function () {",
+                  "    pm.response.to.have.status(204);",
+                  "});",
+                  "",
+                  "pm.test('Response body is empty', function () {",
+                  "    pm.expect(pm.response.text()).to.be.empty;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/sessions/{{sessionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "sessions", "{{sessionId}}"]
+            },
+            "description": "Revoke a specific user session by session ID."
+          }
+        }
+      ],
+      "description": "Session management endpoints for viewing and revoking user sessions."
+    },
+    {
+      "name": "Error Scenarios",
+      "item": [
+        {
+          "name": "Login with Invalid Credentials",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('statusCode');",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson).to.have.property('error');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid@example.com\",\n  \"password\": \"wrongpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Test login with invalid credentials - should return 401 Unauthorized."
+          }
+        },
+        {
+          "name": "Access Protected Route Without Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('statusCode');",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Test accessing protected route without authentication token."
+          }
+        },
+        {
+          "name": "Register with Invalid Email",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response has validation error', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('statusCode');",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    pm.expect(responseJson.message).to.be.an('array');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"invalid-email\",\n  \"password\": \"password123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with invalid email format - should return 400 Bad Request."
+          }
+        },
+        {
+          "name": "Register with Short Password",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});",
+                  "",
+                  "pm.test('Response has password validation error', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "    const message = Array.isArray(responseJson.message) ? responseJson.message.join(' ') : responseJson.message;",
+                  "    pm.expect(message).to.include('8 characters');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"password\": \"123\",\n  \"name\": \"Test User\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "register"]
+            },
+            "description": "Test registration with password shorter than 8 characters."
+          }
+        },
+        {
+          "name": "Refresh with Invalid Token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 401', function () {",
+                  "    pm.response.to.have.status(401);",
+                  "});",
+                  "",
+                  "pm.test('Response has error message', function () {",
+                  "    const responseJson = pm.response.json();",
+                  "    pm.expect(responseJson).to.have.property('statusCode');",
+                  "    pm.expect(responseJson).to.have.property('message');",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refreshToken\": \"invalid-refresh-token\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/refresh",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "refresh"]
+            },
+            "description": "Test token refresh with invalid refresh token."
+          }
+        }
+      ],
+      "description": "Test various error scenarios and validation rules."
+    },
+    {
+      "name": "Complete Workflow Tests",
+      "item": [
+        {
+          "name": "Full Authentication Flow",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Generate unique email for this test",
+                  "const timestamp = Date.now();",
+                  "const testEmail = `test${timestamp}@example.com`;",
+                  "pm.environment.set('testEmail', testEmail);",
+                  "pm.environment.set('testPassword', 'testpassword123');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// This test performs the complete authentication workflow",
+                  "const testEmail = pm.environment.get('testEmail');",
+                  "const testPassword = pm.environment.get('testPassword');",
+                  "",
+                  "pm.test('Complete authentication workflow', function () {",
+                  "    // This would be a multi-step test in a real scenario",
+                  "    // For now, we'll just verify the structure",
+                  "    pm.expect(testEmail).to.not.be.undefined;",
+                  "    pm.expect(testPassword).to.not.be.undefined;",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "me"]
+            },
+            "description": "Placeholder for complete workflow test. In practice, this would be multiple requests chained together."
+          }
+        }
+      ],
+      "description": "End-to-end workflow tests combining multiple authentication operations."
+    }
+  ]
+}

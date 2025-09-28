@@ -1,0 +1,1258 @@
+openapi: 3.0.3
+info:
+  title: Scrum Board Authentication API
+  description: Comprehensive authentication and authorization API for the Scrum board application
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@scrumboard.dev
+servers:
+  - url: https://api.scrumboard.dev/v1
+    description: Production server
+  - url: https://staging-api.scrumboard.dev/v1
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Development server
+
+security:
+  - BearerAuth: []
+  - ApiKeyAuth: []
+
+paths:
+  # Core Authentication Endpoints
+  /auth/register:
+    post:
+      tags:
+        - Authentication
+      summary: Register a new user account
+      description: Creates a new user account with email verification
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterRequest'
+            examples:
+              standard:
+                summary: Standard registration
+                value:
+                  email: "john.doe@example.com"
+                  password: "SecureP@ssw0rd123"
+                  firstName: "John"
+                  lastName: "Doe"
+                  role: "developer"
+                  inviteCode: "TEAM-INVITE-2024"
+      responses:
+        '201':
+          description: User successfully registered
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RegisterResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/UserExists'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: User login with credentials
+      description: Authenticates user and returns JWT tokens
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              email:
+                summary: Login with email
+                value:
+                  email: "john.doe@example.com"
+                  password: "SecureP@ssw0rd123"
+                  rememberMe: true
+              username:
+                summary: Login with username
+                value:
+                  username: "johndoe"
+                  password: "SecureP@ssw0rd123"
+                  rememberMe: false
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/InvalidCredentials'
+        '423':
+          $ref: '#/components/responses/AccountLocked'
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user and invalidate tokens
+      description: Invalidates current session and refresh token
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refreshToken:
+                  type: string
+                  description: Refresh token to invalidate
+                logoutFromAllDevices:
+                  type: boolean
+                  default: false
+                  description: Whether to logout from all devices
+      responses:
+        '200':
+          description: Successfully logged out
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Successfully logged out"
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Generate new access token using refresh token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - refreshToken
+              properties:
+                refreshToken:
+                  type: string
+                  description: Valid refresh token
+      responses:
+        '200':
+          description: Token successfully refreshed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '401':
+          $ref: '#/components/responses/InvalidToken'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Initiate password reset
+      description: Sends password reset email to user
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                  description: User's email address
+      responses:
+        '200':
+          description: Password reset email sent (always returns 200 for security)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "If an account with that email exists, we've sent a password reset link"
+        '429':
+          $ref: '#/components/responses/RateLimited'
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Complete password reset
+      description: Reset password using token from email
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+                - newPassword
+              properties:
+                token:
+                  type: string
+                  description: Password reset token from email
+                newPassword:
+                  type: string
+                  format: password
+                  minLength: 8
+                  description: New password (min 8 chars, must include uppercase, lowercase, number, special char)
+      responses:
+        '200':
+          description: Password successfully reset
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Password successfully reset"
+        '400':
+          $ref: '#/components/responses/InvalidToken'
+
+  /auth/verify-email:
+    post:
+      tags:
+        - Authentication
+      summary: Verify email address
+      description: Verify user's email using verification token
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - token
+              properties:
+                token:
+                  type: string
+                  description: Email verification token
+      responses:
+        '200':
+          description: Email successfully verified
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Email successfully verified"
+        '400':
+          $ref: '#/components/responses/InvalidToken'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user profile
+      description: Returns authenticated user's profile information
+      responses:
+        '200':
+          description: User profile retrieved
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserProfile'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  # OAuth/SSO Endpoints
+  /auth/oauth/{provider}:
+    get:
+      tags:
+        - OAuth
+      summary: Initiate OAuth flow
+      description: Redirects to OAuth provider for authentication
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github, microsoft, slack]
+        - name: redirect_uri
+          in: query
+          schema:
+            type: string
+            format: uri
+            description: Optional redirect URI after successful auth
+      responses:
+        '302':
+          description: Redirect to OAuth provider
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/oauth/{provider}/callback:
+    get:
+      tags:
+        - OAuth
+      summary: OAuth callback handler
+      description: Handles OAuth provider callback and creates session
+      security: []
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github, microsoft, slack]
+        - name: code
+          in: query
+          required: true
+          schema:
+            type: string
+            description: Authorization code from OAuth provider
+        - name: state
+          in: query
+          schema:
+            type: string
+            description: State parameter for CSRF protection
+      responses:
+        '200':
+          description: OAuth authentication successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/OAuthError'
+
+  /auth/oauth/link:
+    post:
+      tags:
+        - OAuth
+      summary: Link OAuth account to existing user
+      description: Links an OAuth provider account to current user
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - provider
+                - code
+              properties:
+                provider:
+                  type: string
+                  enum: [google, github, microsoft, slack]
+                code:
+                  type: string
+                  description: OAuth authorization code
+      responses:
+        '200':
+          description: OAuth account successfully linked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/OAuthAccountExists'
+
+  /auth/oauth/{provider}:
+    delete:
+      tags:
+        - OAuth
+      summary: Unlink OAuth provider
+      description: Removes OAuth provider link from user account
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [google, github, microsoft, slack]
+      responses:
+        '200':
+          description: OAuth provider successfully unlinked
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  # Security Endpoints
+  /auth/mfa/enable:
+    post:
+      tags:
+        - Multi-Factor Authentication
+      summary: Enable MFA for user
+      description: Generates TOTP secret and QR code for MFA setup
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password:
+                  type: string
+                  description: Current password for verification
+      responses:
+        '200':
+          description: MFA setup information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  secret:
+                    type: string
+                    description: TOTP secret key
+                  qrCode:
+                    type: string
+                    description: Base64 encoded QR code image
+                  backupCodes:
+                    type: array
+                    items:
+                      type: string
+                    description: One-time backup codes
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/mfa/verify:
+    post:
+      tags:
+        - Multi-Factor Authentication
+      summary: Verify MFA code
+      description: Verifies TOTP code and completes MFA setup or login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - code
+              properties:
+                code:
+                  type: string
+                  pattern: '^[0-9]{6}$'
+                  description: 6-digit TOTP code
+                isSetup:
+                  type: boolean
+                  default: false
+                  description: Whether this is completing MFA setup
+      responses:
+        '200':
+          description: MFA code verified successfully
+        '400':
+          $ref: '#/components/responses/InvalidMFACode'
+
+  /auth/mfa/disable:
+    post:
+      tags:
+        - Multi-Factor Authentication
+      summary: Disable MFA
+      description: Disables MFA for the user account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - password
+              properties:
+                password:
+                  type: string
+                  description: Current password for verification
+                code:
+                  type: string
+                  description: Current TOTP code or backup code
+      responses:
+        '200':
+          description: MFA successfully disabled
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /auth/sessions:
+    get:
+      tags:
+        - Session Management
+      summary: List active sessions
+      description: Returns list of user's active sessions across devices
+      responses:
+        '200':
+          description: List of active sessions
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sessions:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/UserSession'
+
+  /auth/sessions/{sessionId}:
+    delete:
+      tags:
+        - Session Management
+      summary: Revoke specific session
+      description: Invalidates a specific user session
+      parameters:
+        - name: sessionId
+          in: path
+          required: true
+          schema:
+            type: string
+            description: Session ID to revoke
+      responses:
+        '200':
+          description: Session successfully revoked
+        '404':
+          $ref: '#/components/responses/SessionNotFound'
+
+  # Admin Endpoints
+  /admin/users:
+    get:
+      tags:
+        - Admin
+      summary: List users (admin only)
+      description: Returns paginated list of users with filters
+      security:
+        - BearerAuth: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: search
+          in: query
+          schema:
+            type: string
+            description: Search by name or email
+        - name: role
+          in: query
+          schema:
+            type: string
+            enum: [admin, manager, developer, viewer]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [active, locked, pending_verification]
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  users:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AdminUserView'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/lock:
+    post:
+      tags:
+        - Admin
+      summary: Lock user account
+      description: Locks a user account preventing login
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                reason:
+                  type: string
+                  description: Reason for locking the account
+                duration:
+                  type: integer
+                  description: Lock duration in hours (optional, permanent if not specified)
+      responses:
+        '200':
+          description: User account locked successfully
+        '404':
+          $ref: '#/components/responses/UserNotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/users/{userId}/unlock:
+    post:
+      tags:
+        - Admin
+      summary: Unlock user account
+      description: Unlocks a previously locked user account
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: User account unlocked successfully
+        '404':
+          $ref: '#/components/responses/UserNotFound'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+  /admin/audit-logs:
+    get:
+      tags:
+        - Admin
+      summary: Get security audit logs
+      description: Returns security and authentication audit logs
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 50
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+            description: Filter by specific user
+        - name: action
+          in: query
+          schema:
+            type: string
+            enum: [login, logout, register, password_reset, mfa_enable, mfa_disable, account_lock, account_unlock]
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Audit logs retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  logs:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AuditLog'
+                  pagination:
+                    $ref: '#/components/schemas/PaginationInfo'
+        '403':
+          $ref: '#/components/responses/Forbidden'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    ApiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+
+  schemas:
+    RegisterRequest:
+      type: object
+      required:
+        - email
+        - password
+        - firstName
+        - lastName
+      properties:
+        email:
+          type: string
+          format: email
+          description: User's email address
+        password:
+          type: string
+          format: password
+          minLength: 8
+          pattern: '^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]'
+          description: Password with complexity requirements
+        firstName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        lastName:
+          type: string
+          minLength: 1
+          maxLength: 50
+        username:
+          type: string
+          minLength: 3
+          maxLength: 30
+          pattern: '^[a-zA-Z0-9_-]+$'
+          description: Optional username (auto-generated if not provided)
+        role:
+          type: string
+          enum: [developer, viewer]
+          default: developer
+          description: Initial role assignment
+        inviteCode:
+          type: string
+          description: Team invitation code (required for team signup)
+
+    RegisterResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: "Account created successfully. Please check your email for verification."
+        userId:
+          type: string
+          format: uuid
+        emailVerificationRequired:
+          type: boolean
+
+    LoginRequest:
+      type: object
+      required:
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        rememberMe:
+          type: boolean
+          default: false
+        mfaCode:
+          type: string
+          pattern: '^[0-9]{6}$'
+          description: Required if MFA is enabled
+      oneOf:
+        - required: [email]
+        - required: [username]
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+        refreshToken:
+          type: string
+          description: Refresh token for getting new access tokens
+        expiresIn:
+          type: integer
+          description: Access token expiration time in seconds
+        user:
+          $ref: '#/components/schemas/UserProfile'
+        mfaRequired:
+          type: boolean
+          description: Whether MFA verification is required
+        temporaryToken:
+          type: string
+          description: Temporary token for MFA verification (if mfaRequired is true)
+
+    TokenResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        expiresIn:
+          type: integer
+
+    UserProfile:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        username:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [admin, manager, developer, viewer]
+        isEmailVerified:
+          type: boolean
+        isMfaEnabled:
+          type: boolean
+        lastLoginAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        avatar:
+          type: string
+          format: uri
+          nullable: true
+        timezone:
+          type: string
+          example: "America/New_York"
+        language:
+          type: string
+          example: "en"
+        oauthProviders:
+          type: array
+          items:
+            type: string
+            enum: [google, github, microsoft, slack]
+
+    UserSession:
+      type: object
+      properties:
+        id:
+          type: string
+        deviceInfo:
+          type: object
+          properties:
+            userAgent:
+              type: string
+            ip:
+              type: string
+            location:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastActivityAt:
+          type: string
+          format: date-time
+        isCurrent:
+          type: boolean
+
+    AdminUserView:
+      allOf:
+        - $ref: '#/components/schemas/UserProfile'
+        - type: object
+          properties:
+            status:
+              type: string
+              enum: [active, locked, pending_verification]
+            loginAttempts:
+              type: integer
+            lockReason:
+              type: string
+              nullable: true
+            lockedAt:
+              type: string
+              format: date-time
+              nullable: true
+            lockedUntil:
+              type: string
+              format: date-time
+              nullable: true
+
+    AuditLog:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          nullable: true
+        action:
+          type: string
+        details:
+          type: object
+        ipAddress:
+          type: string
+        userAgent:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+        success:
+          type: boolean
+
+    PaginationInfo:
+      type: object
+      properties:
+        page:
+          type: integer
+        limit:
+          type: integer
+        total:
+          type: integer
+        totalPages:
+          type: integer
+        hasNext:
+          type: boolean
+        hasPrev:
+          type: boolean
+
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              nullable: true
+        timestamp:
+          type: string
+          format: date-time
+        path:
+          type: string
+
+  responses:
+    BadRequest:
+      description: Bad request - Invalid input data
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            validation:
+              summary: Validation error
+              value:
+                error:
+                  code: "VALIDATION_ERROR"
+                  message: "Invalid input data"
+                  details:
+                    email: "Must be a valid email address"
+                    password: "Must be at least 8 characters with uppercase, lowercase, number, and special character"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/register"
+
+    Unauthorized:
+      description: Unauthorized - Invalid or missing authentication token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            missing_token:
+              summary: Missing token
+              value:
+                error:
+                  code: "MISSING_TOKEN"
+                  message: "Authentication token is required"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/me"
+            invalid_token:
+              summary: Invalid token
+              value:
+                error:
+                  code: "INVALID_TOKEN"
+                  message: "Authentication token is invalid or expired"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/me"
+
+    Forbidden:
+      description: Forbidden - Insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            insufficient_permissions:
+              summary: Insufficient permissions
+              value:
+                error:
+                  code: "INSUFFICIENT_PERMISSIONS"
+                  message: "You don't have permission to access this resource"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/admin/users"
+
+    UserExists:
+      description: Conflict - User already exists
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            user_exists:
+              summary: User already exists
+              value:
+                error:
+                  code: "USER_EXISTS"
+                  message: "A user with this email already exists"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/register"
+
+    UserNotFound:
+      description: Not Found - User not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            user_not_found:
+              summary: User not found
+              value:
+                error:
+                  code: "USER_NOT_FOUND"
+                  message: "User not found"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/admin/users/123"
+
+    InvalidCredentials:
+      description: Unauthorized - Invalid login credentials
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_credentials:
+              summary: Invalid credentials
+              value:
+                error:
+                  code: "INVALID_CREDENTIALS"
+                  message: "Invalid email or password"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/login"
+
+    AccountLocked:
+      description: Locked - Account is locked
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            account_locked:
+              summary: Account locked
+              value:
+                error:
+                  code: "ACCOUNT_LOCKED"
+                  message: "Account is locked due to too many failed login attempts"
+                  details:
+                    lockedUntil: "2024-01-15T12:30:00Z"
+                    reason: "Multiple failed login attempts"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/login"
+
+    InvalidToken:
+      description: Bad Request - Invalid or expired token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_token:
+              summary: Invalid token
+              value:
+                error:
+                  code: "INVALID_TOKEN"
+                  message: "Token is invalid or expired"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/reset-password"
+
+    InvalidMFACode:
+      description: Bad Request - Invalid MFA code
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            invalid_mfa:
+              summary: Invalid MFA code
+              value:
+                error:
+                  code: "INVALID_MFA_CODE"
+                  message: "Invalid or expired MFA code"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/mfa/verify"
+
+    RateLimited:
+      description: Too Many Requests - Rate limit exceeded
+      headers:
+        Retry-After:
+          schema:
+            type: integer
+          description: Seconds to wait before retrying
+        X-RateLimit-Limit:
+          schema:
+            type: integer
+          description: Request limit per window
+        X-RateLimit-Remaining:
+          schema:
+            type: integer
+          description: Remaining requests in current window
+        X-RateLimit-Reset:
+          schema:
+            type: integer
+          description: Timestamp when rate limit resets
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            rate_limited:
+              summary: Rate limit exceeded
+              value:
+                error:
+                  code: "RATE_LIMIT_EXCEEDED"
+                  message: "Too many requests. Please try again later."
+                  details:
+                    retryAfter: 60
+                    limit: 5
+                    window: "5 minutes"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/login"
+
+    OAuthError:
+      description: OAuth authentication error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            oauth_error:
+              summary: OAuth error
+              value:
+                error:
+                  code: "OAUTH_ERROR"
+                  message: "OAuth authentication failed"
+                  details:
+                    provider: "google"
+                    reason: "access_denied"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/oauth/google/callback"
+
+    OAuthAccountExists:
+      description: OAuth account already linked to another user
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            oauth_exists:
+              summary: OAuth account exists
+              value:
+                error:
+                  code: "OAUTH_ACCOUNT_EXISTS"
+                  message: "This OAuth account is already linked to another user"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/oauth/link"
+
+    SessionNotFound:
+      description: Session not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          examples:
+            session_not_found:
+              summary: Session not found
+              value:
+                error:
+                  code: "SESSION_NOT_FOUND"
+                  message: "Session not found or already revoked"
+                timestamp: "2024-01-15T10:30:00Z"
+                path: "/api/auth/sessions/123"
+
+# Rate Limiting Configuration
+x-rate-limits:
+  authentication:
+    /auth/login:
+      limit: 5
+      window: 900  # 15 minutes
+      skipSuccessfulRequests: true
+    /auth/register:
+      limit: 3
+      window: 3600  # 1 hour
+    /auth/forgot-password:
+      limit: 3
+      window: 3600  # 1 hour
+    /auth/reset-password:
+      limit: 5
+      window: 3600  # 1 hour
+  general:
+    default:
+      limit: 100
+      window: 3600  # 1 hour
+  admin:
+    /admin/*:
+      limit: 200
+      window: 3600  # 1 hour
+
+# Security Configuration
+x-security-config:
+  jwt:
+    accessTokenExpiry: 900  # 15 minutes
+    refreshTokenExpiry: 604800  # 7 days
+    algorithm: RS256
+  passwords:
+    minLength: 8
+    requireUppercase: true
+    requireLowercase: true
+    requireNumbers: true
+    requireSpecialChars: true
+    maxLoginAttempts: 5
+    lockoutDuration: 900  # 15 minutes
+  session:
+    maxConcurrentSessions: 5
+    inactivityTimeout: 3600  # 1 hour
+  mfa:
+    issuer: "Scrum Board"
+    algorithm: SHA1
+    digits: 6
+    period: 30
