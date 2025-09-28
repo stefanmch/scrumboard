@@ -1,47 +1,47 @@
-import { Exclude, Expose } from 'class-transformer';
-import { UserRole } from './register.dto';
+import { Exclude, Expose } from 'class-transformer'
+import { UserRole } from './register.dto'
 
 export class UserResponseDto {
   @Expose()
-  id: string;
+  id: string
 
   @Expose()
-  email: string;
+  email: string
 
   @Expose()
-  name: string;
+  name: string
 
   @Expose()
-  role: UserRole;
+  role: UserRole
 
   @Expose()
-  emailVerified: boolean;
+  emailVerified: boolean
 
   @Expose()
-  isActive: boolean;
+  isActive: boolean
 
   @Expose()
-  createdAt: Date;
+  createdAt: Date
 
   @Expose()
-  updatedAt: Date;
+  updatedAt: Date
 
   @Exclude()
-  password: string;
+  password: string
 
   @Exclude()
-  passwordResetToken: string;
+  passwordResetToken: string
 
   @Exclude()
-  passwordResetExpires: Date;
+  passwordResetExpires: Date
 
   @Exclude()
-  emailVerificationToken: string;
+  emailVerificationToken: string
 
   @Exclude()
-  refreshTokens: any[];
+  refreshTokens: any[]
 
   constructor(partial: Partial<UserResponseDto>) {
-    Object.assign(this, partial);
+    Object.assign(this, partial)
   }
 }

@@ -1,41 +1,41 @@
-import { Expose } from 'class-transformer';
-import { UserResponseDto } from './user-response.dto';
+import { Expose } from 'class-transformer'
+import { UserResponseDto } from './user-response.dto'
 
 export class AuthResponseDto {
   @Expose()
-  user: UserResponseDto;
+  user: UserResponseDto
 
   @Expose()
-  accessToken: string;
+  accessToken: string
 
   @Expose()
-  refreshToken: string;
+  refreshToken: string
 
   @Expose()
-  expiresIn: number;
+  expiresIn: number
 
   @Expose()
-  tokenType: string = 'Bearer';
+  tokenType: string = 'Bearer'
 
   constructor(partial: Partial<AuthResponseDto>) {
-    Object.assign(this, partial);
+    Object.assign(this, partial)
   }
 }
 
 export class RefreshResponseDto {
   @Expose()
-  accessToken: string;
+  accessToken: string
 
   @Expose()
-  refreshToken: string;
+  refreshToken: string
 
   @Expose()
-  expiresIn: number;
+  expiresIn: number
 
   @Expose()
-  tokenType: string = 'Bearer';
+  tokenType: string = 'Bearer'
 
   constructor(partial: Partial<RefreshResponseDto>) {
-    Object.assign(this, partial);
+    Object.assign(this, partial)
   }
 }
