@@ -60,15 +60,17 @@ export class SimpleJwtAuthGuard implements CanActivate {
       }
 
       // Handle different types of token errors
-      if (error.message?.includes('expired')) {
+      const errorMessage = error?.message || '';
+
+      if (errorMessage.includes('expired')) {
         throw new UnauthorizedException('Access token has expired');
       }
 
-      if (error.message?.includes('signature')) {
+      if (errorMessage.includes('signature')) {
         throw new UnauthorizedException('Invalid access token signature');
       }
 
-      if (error.message?.includes('format')) {
+      if (errorMessage.includes('format')) {
         throw new UnauthorizedException('Malformed access token');
       }
 
@@ -81,14 +83,15 @@ export class SimpleJwtAuthGuard implements CanActivate {
    * Extract JWT token from Authorization header
    */
   private extractTokenFromHeader(request: Request): string | undefined {
-    const authHeader = request.headers.authorization;
+    const authHeader = request.headers?.authorization;
 
     if (!authHeader) {
       return undefined;
     }
 
-    // Check for Bearer token format
-    const [type, token] = authHeader.split(' ');
+    // Check for Bearer token format - handle multiple spaces
+    const parts = authHeader.trim().split(/\s+/);
+    const [type, token] = parts;
 
     if (type !== 'Bearer' || !token) {
       return undefined;

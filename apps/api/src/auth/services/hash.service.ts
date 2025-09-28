@@ -69,6 +69,17 @@ export class HashService {
   } {
     const errors: string[] = [];
 
+    // Handle null/undefined password
+    if (!password) {
+      errors.push('Password is required');
+      errors.push('Password must be at least 8 characters long');
+      errors.push('Password must contain at least one uppercase letter');
+      errors.push('Password must contain at least one lowercase letter');
+      errors.push('Password must contain at least one number');
+      errors.push('Password must contain at least one special character');
+      return { isValid: false, errors };
+    }
+
     if (password.length < 8) {
       errors.push('Password must be at least 8 characters long');
     }
