@@ -35,7 +35,7 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, config)
   SwaggerModule.setup('api/docs', app, document, {
     customSiteTitle: 'Scrumboard API Docs',
-    customFavIcon: 'https://nestjs.com/img/logo-small.svg',
+    customfavIcon: 'https://nestjs.com/img/logo-small.svg',
     customCss: '.swagger-ui .topbar { display: none }',
   })
 
