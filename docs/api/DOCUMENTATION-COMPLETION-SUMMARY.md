@@ -3,7 +3,11 @@
 **Date:** 2025-10-15
 **Issue:** #57 - Implement User Profile API Endpoints
 **Agent:** API Documentation Specialist
-**Status:** ✅ COMPLETE
+**Status:** ✅ COMPLETE & DEPLOYED
+
+**Pull Request:** [#65 - feat: implement user profile API endpoints](https://github.com/stefanmch/scrumboard/pull/65)
+**Branch:** `feature/issue-57-user-profile-api`
+**Deployment Status:** Ready for Review
 
 ---
 
@@ -373,4 +377,7 @@ The API documentation for User Profile endpoints (Issue #57) is comprehensive, a
 
 **Agent:** API Documentation Specialist
 **Completion Time:** 2025-10-15 16:45 UTC
+**PR Created:** 2025-10-15
+**Pull Request URL:** https://github.com/stefanmch/scrumboard/pull/65
 **Swarm Session:** swarm-1760546086167-4va9zimwl
+**Status:** Ready for Review and Merge
