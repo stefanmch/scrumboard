@@ -951,7 +951,7 @@ describe('Authentication API (e2e)', () => {
 
       // Password should be hashed, not plain text
       expect(user.password).not.toBe(testUser.password)
-      expect(user.password).toMatch(/^\$2[aby]\$/) // bcrypt hash pattern
+      expect(user.password).toMatch(/^[^:]+:[^:]+$/) // scrypt 'salt:hash' pattern
     })
 
     it('should generate valid JWT tokens', async () => {
