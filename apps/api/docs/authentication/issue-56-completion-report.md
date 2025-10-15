@@ -189,7 +189,7 @@ All error messages are generic to prevent information leakage:
 ## API Documentation
 
 ### Swagger Documentation
-**URL**: http://localhost:3000/api/docs
+**URL**: http://localhost:3001/api/docs
 
 Comprehensive API documentation includes:
 - All 12 authentication endpoints
