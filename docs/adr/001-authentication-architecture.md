@@ -134,9 +134,10 @@ Refresh Token:
    - Automatic rotation
 
 2. **Rate Limiting**:
-   - Login: 5 attempts per 15 minutes
-   - Registration: 3 attempts per hour
-   - Password reset: 3 attempts per hour
+   - Login: 5 attempts per 15 minutes per user (tracked by email, not IP)
+   - Registration: 5 attempts per minute per IP
+   - Password reset: 3 attempts per minute per IP
+   - Token refresh: 20 attempts per minute per IP
 
 3. **Account Security**:
    - Account lockout after 5 failed attempts

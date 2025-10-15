@@ -158,7 +158,7 @@ User-Agent: string (optional, for session tracking)
 }
 ```
 
-**Rate Limiting**: 10 requests per minute
+**Rate Limiting**: 5 requests per 15 minutes per user (tracked by email address, not IP)
 
 ---
 
@@ -468,6 +468,8 @@ Authorization: Bearer <access_token>
 ### Rate Limiting
 - Different limits for different endpoints based on security sensitivity
 - Brute force protection on authentication endpoints
+- Login endpoint uses per-user rate limiting (tracked by email) to prevent blocking legitimate users sharing IP addresses (corporate networks, NAT)
+- Other endpoints use IP-based rate limiting
 - Higher limits for token refresh to support normal application flow
 
 ### CORS and Headers
