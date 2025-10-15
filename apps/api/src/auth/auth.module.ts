@@ -23,6 +23,7 @@ import { UserThrottlerGuard } from './guards/user-throttler.guard'
   exports: [
     AuthService,
     CustomJwtService,
+    SimpleJwtService,
     HashService,
     SimpleJwtAuthGuard,
     RolesGuard,
