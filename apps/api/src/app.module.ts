@@ -6,6 +6,7 @@ import { AppService } from './app.service'
 import { PrismaModule } from './prisma/prisma.module'
 import { StoriesModule } from './stories/stories.module'
 import { AuthModule } from './auth/auth.module'
+import { UsersModule } from './users/users.module'
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 @Module({
@@ -21,6 +22,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     PrismaModule,
     AuthModule,
     StoriesModule,
+    UsersModule,
   ],
   controllers: [AppController],
   providers: [
