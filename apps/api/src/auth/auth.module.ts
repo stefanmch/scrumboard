@@ -6,6 +6,7 @@ import { HashService } from './services/hash.service'
 import { AuthController } from './auth.controller'
 import { SimpleJwtAuthGuard } from './guards/simple-jwt-auth.guard'
 import { RolesGuard } from './guards/roles.guard'
+import { UserThrottlerGuard } from './guards/user-throttler.guard'
 
 // Simplified auth module without external dependencies that cause issues
 @Module({
@@ -17,6 +18,7 @@ import { RolesGuard } from './guards/roles.guard'
     HashService,
     SimpleJwtAuthGuard,
     RolesGuard,
+    UserThrottlerGuard,
   ],
   exports: [
     AuthService,
@@ -24,6 +26,7 @@ import { RolesGuard } from './guards/roles.guard'
     HashService,
     SimpleJwtAuthGuard,
     RolesGuard,
+    UserThrottlerGuard,
   ],
 })
 export class AuthModule {}

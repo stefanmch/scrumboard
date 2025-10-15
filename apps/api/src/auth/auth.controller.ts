@@ -17,6 +17,7 @@ import { Throttle } from '@nestjs/throttler'
 import { Request } from 'express'
 import { AuthService } from './services/auth.service'
 import { SimpleJwtAuthGuard } from './guards/simple-jwt-auth.guard'
+import { UserThrottlerGuard } from './guards/user-throttler.guard'
 import { Public, Roles } from './decorators/auth.decorator'
 import { CurrentUser } from './decorators/current-user.decorator'
 import {
@@ -57,11 +58,12 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
-  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes (as per issue #56)
+  @UseGuards(UserThrottlerGuard)
+  @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes per user (tracked by email, not IP)
   @ApiOperation({ summary: 'Login with email and password' })
   @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 429, description: 'Too many login attempts' })
+  @ApiResponse({ status: 429, description: 'Too many login attempts for this account' })
   async login(
     @Body() loginDto: LoginDto,
     @Ip() ipAddress: string,
