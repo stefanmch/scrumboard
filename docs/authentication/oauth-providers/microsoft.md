@@ -35,6 +35,23 @@ az ad app create \
   --required-resource-accesses @manifest.json
 ```
 
+
+#### 1.2.1 Create manifest.json for required resource accesses
+
+The `manifest.json` file defines the required resource access permissions for your application. Create a file named `manifest.json` in your working directory with the following example content (customize as needed for your app's requirements):
+
+```json
+[
+  {
+    "resourceAppId": "00000003-0000-0000-c000-000000000000", // Microsoft Graph
+    "resourceAccess": [
+      {
+        "id": "User.Read",
+        "type": "Scope"
+      }
+    ]
+  }
+]
 ### 1.3 Application Configuration
 
 ```yaml
