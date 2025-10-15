@@ -1,5 +1,6 @@
 import { NestFactory } from '@nestjs/core'
 import { ValidationPipe, Logger } from '@nestjs/common'
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { AppModule } from './app.module'
 
 async function bootstrap() {
@@ -8,6 +9,35 @@ async function bootstrap() {
   })
 
   const logger = new Logger('Bootstrap')
+
+  // Swagger API Documentation Configuration
+  const config = new DocumentBuilder()
+    .setTitle('Scrumboard API')
+    .setDescription(
+      'REST API for Scrumboard application with authentication, user stories, and project management features'
+    )
+    .setVersion('1.0')
+    .addTag('auth', 'Authentication endpoints')
+    .addTag('stories', 'User stories management')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        description: 'Enter JWT token',
+        in: 'header',
+      },
+      'JWT-auth'
+    )
+    .build()
+
+  const document = SwaggerModule.createDocument(app, config)
+  SwaggerModule.setup('api/docs', app, document, {
+    customSiteTitle: 'Scrumboard API Docs',
+    customfavIcon: 'https://nestjs.com/img/logo-small.svg',
+    customCss: '.swagger-ui .topbar { display: none }',
+  })
 
   // Security headers (basic implementation without helmet)
   app.use((req, res, next) => {
@@ -91,6 +121,7 @@ async function bootstrap() {
   logger.log(`🚀 Backend API running on http://localhost:${port}`)
   logger.log(`🏥 Health check: http://localhost:${port}/health`)
   logger.log(`📚 API endpoints: http://localhost:${port}/api/v1`)
+  logger.log(`📖 API Documentation: http://localhost:${port}/api/docs`)
   logger.log(`🔒 Environment: ${process.env.NODE_ENV || 'development'}`)
 }
 
