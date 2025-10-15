@@ -43,6 +43,7 @@ export default function RegisterPage() {
   const router = useRouter()
   const { showError, showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  const redirectTimeoutRef = React.useRef<NodeJS.Timeout>()
 
   const {
     register,
@@ -62,6 +63,15 @@ export default function RegisterPage() {
 
   const password = watch('password')
 
+  // Cleanup timeout on unmount
+  React.useEffect(() => {
+    return () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current)
+      }
+    }
+  }, [])
+
   const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
 
@@ -78,7 +88,7 @@ export default function RegisterPage() {
       )
 
       // Redirect to login page after a short delay
-      setTimeout(() => {
+      redirectTimeoutRef.current = setTimeout(() => {
         router.push('/login')
       }, 2000)
     } catch (error) {
