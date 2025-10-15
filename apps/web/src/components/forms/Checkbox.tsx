@@ -9,7 +9,8 @@ export interface CheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement
 
 export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(
   ({ label, error, className = '', ...props }, ref) => {
-    const checkboxId = props.id || props.name || `checkbox-${Math.random().toString(36).substr(2, 9)}`
+    const generatedId = React.useId()
+    const checkboxId = props.id || props.name || generatedId
 
     return (
       <div className="flex items-start">

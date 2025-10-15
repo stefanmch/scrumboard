@@ -13,9 +13,10 @@ export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
 export const Input = forwardRef<HTMLInputElement, InputProps>(
   ({ label, error, helperText, type, className = '', showPasswordToggle, ...props }, ref) => {
     const [showPassword, setShowPassword] = React.useState(false)
+    const generatedId = React.useId()
     const inputType = showPasswordToggle && type === 'password' ? (showPassword ? 'text' : 'password') : type
 
-    const inputId = props.id || props.name || `input-${Math.random().toString(36).substr(2, 9)}`
+    const inputId = props.id || props.name || generatedId
 
     return (
       <div className="w-full">
