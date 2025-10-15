@@ -100,7 +100,7 @@ alerting:
 ### 2.2 Application Metrics Implementation
 
 ```typescript
-// src/monitoring/metrics.service.ts
+// src/auth/services/metrics.service.ts
 import { Injectable } from '@nestjs/common';
 import { Counter, Histogram, Gauge, register } from 'prom-client';
 
