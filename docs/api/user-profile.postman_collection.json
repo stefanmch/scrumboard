@@ -1,0 +1,378 @@
+{
+  "info": {
+    "name": "User Profile API",
+    "description": "Comprehensive API collection for user profile management endpoints",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{accessToken}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001/api/v1",
+      "type": "string"
+    },
+    {
+      "key": "accessToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "userId",
+      "value": "cm4rcxxb20000xqiw2ofsphwl",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Authentication",
+      "item": [
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "if (pm.response.code === 200) {",
+                  "    const response = pm.response.json();",
+                  "    pm.collectionVariables.set('accessToken', response.access_token);",
+                  "    pm.collectionVariables.set('userId', response.user.id);",
+                  "    console.log('Access token saved:', response.access_token);",
+                  "    console.log('User ID saved:', response.user.id);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            },
+            "description": "Login to obtain access token. Token is automatically saved to collection variables."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "User Profile",
+      "item": [
+        {
+          "name": "Get User Profile",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Retrieve detailed user profile information. Requires authentication and authorization (own profile or ADMIN role)."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"cm4rcxxb20000xqiw2ofsphwl\",\n  \"email\": \"user@example.com\",\n  \"name\": \"John Doe\",\n  \"role\": \"DEVELOPER\",\n  \"avatar\": \"/uploads/avatars/user-123.jpg\",\n  \"timeZone\": \"America/New_York\",\n  \"workingHours\": \"{\\\"start\\\": \\\"09:00\\\", \\\"end\\\": \\\"17:00\\\"}\",\n  \"notificationPrefs\": \"{\\\"email\\\": true, \\\"push\\\": false, \\\"inApp\\\": true}\",\n  \"emailVerified\": true,\n  \"isActive\": true,\n  \"lastLoginAt\": \"2025-10-15T16:30:00Z\",\n  \"loginCount\": 42,\n  \"createdAt\": \"2025-10-15T10:30:00Z\",\n  \"updatedAt\": \"2025-10-15T16:45:00Z\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update User Profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"John Smith\",\n  \"timeZone\": \"America/Los_Angeles\",\n  \"workingHours\": \"{\\\"start\\\": \\\"08:00\\\", \\\"end\\\": \\\"16:00\\\"}\",\n  \"notificationPrefs\": \"{\\\"email\\\": true, \\\"push\\\": true, \\\"inApp\\\": true}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Update user profile information. Can update name, bio, email, or avatarUrl."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"cm4rcxxb20000xqiw2ofsphwl\",\n  \"email\": \"user@example.com\",\n  \"name\": \"John Smith\",\n  \"role\": \"DEVELOPER\",\n  \"avatar\": \"/uploads/avatars/user-123.jpg\",\n  \"timeZone\": \"America/Los_Angeles\",\n  \"workingHours\": \"{\\\"start\\\": \\\"08:00\\\", \\\"end\\\": \\\"16:00\\\"}\",\n  \"notificationPrefs\": \"{\\\"email\\\": true, \\\"push\\\": true, \\\"inApp\\\": true}\",\n  \"emailVerified\": true,\n  \"isActive\": true,\n  \"lastLoginAt\": \"2025-10-15T16:30:00Z\",\n  \"loginCount\": 42,\n  \"createdAt\": \"2025-10-15T10:30:00Z\",\n  \"updatedAt\": \"2025-10-15T16:50:00Z\"\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"name must be longer than 3 characters\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Upload Avatar",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "avatar",
+                  "type": "file",
+                  "src": [],
+                  "description": "Avatar image file (JPEG, PNG, JPG, max 5MB)"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/avatar",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "avatar"]
+            },
+            "description": "Upload a new avatar image. Accepts JPEG, PNG, or WebP files up to 5MB."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"id\": \"cm4rcxxb20000xqiw2ofsphwl\",\n  \"email\": \"user@example.com\",\n  \"name\": \"John Smith\",\n  \"role\": \"DEVELOPER\",\n  \"avatar\": \"/uploads/avatars/cm4rcxxb20000xqiw2ofsphwl-1697456789.jpg\",\n  \"timeZone\": \"America/Los_Angeles\",\n  \"workingHours\": \"{\\\"start\\\": \\\"08:00\\\", \\\"end\\\": \\\"16:00\\\"}\",\n  \"notificationPrefs\": \"{\\\"email\\\": true, \\\"push\\\": true, \\\"inApp\\\": true}\",\n  \"emailVerified\": true,\n  \"isActive\": true,\n  \"lastLoginAt\": \"2025-10-15T16:30:00Z\",\n  \"loginCount\": 42,\n  \"createdAt\": \"2025-10-15T10:30:00Z\",\n  \"updatedAt\": \"2025-10-15T17:00:00Z\"\n}"
+            },
+            {
+              "name": "Invalid File Type",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": \"Invalid file type. Only JPG and PNG are allowed\",\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Change Password",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"oldPassword\": \"OldPassword123!\",\n  \"newPassword\": \"NewSecurePass123!\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "password"]
+            },
+            "description": "Change user password. Requires current password for verification. Invalidates all refresh tokens."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"message\": \"Password changed successfully\"\n}"
+            },
+            {
+              "name": "Current Password Incorrect",
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 401,\n  \"message\": \"Incorrect old password\"\n}"
+            },
+            {
+              "name": "Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"statusCode\": 400,\n  \"message\": [\n    \"Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character\"\n  ],\n  \"error\": \"Bad Request\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get User Activity",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}/activity?limit=10&offset=0",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}", "activity"],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10",
+                  "description": "Number of activity records to return"
+                },
+                {
+                  "key": "offset",
+                  "value": "0",
+                  "description": "Number of records to skip (pagination)"
+                },
+                {
+                  "key": "type",
+                  "value": "login",
+                  "description": "Filter by activity type",
+                  "disabled": true
+                },
+                {
+                  "key": "startDate",
+                  "value": "2025-10-01T00:00:00Z",
+                  "description": "Filter from this date (ISO 8601)",
+                  "disabled": true
+                },
+                {
+                  "key": "endDate",
+                  "value": "2025-10-15T23:59:59Z",
+                  "description": "Filter until this date (ISO 8601)",
+                  "disabled": true
+                }
+              ]
+            },
+            "description": "Retrieve user activity log with pagination and filtering options."
+          },
+          "response": [
+            {
+              "name": "Success Response",
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"data\": [\n    {\n      \"id\": \"act_123456\",\n      \"userId\": \"cm4rcxxb20000xqiw2ofsphwl\",\n      \"type\": \"login\",\n      \"description\": \"User logged in\",\n      \"ipAddress\": \"192.168.1.100\",\n      \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64)...\",\n      \"metadata\": {\n        \"location\": \"New York, US\",\n        \"device\": \"Desktop\"\n      },\n      \"createdAt\": \"2025-10-15T16:30:00Z\"\n    },\n    {\n      \"id\": \"act_123455\",\n      \"userId\": \"cm4rcxxb20000xqiw2ofsphwl\",\n      \"type\": \"profile_update\",\n      \"description\": \"Profile information updated\",\n      \"ipAddress\": \"192.168.1.100\",\n      \"userAgent\": \"Mozilla/5.0 (Windows NT 10.0; Win64; x64)...\",\n      \"metadata\": {\n        \"changes\": [\"name\", \"bio\"]\n      },\n      \"createdAt\": \"2025-10-15T16:25:00Z\"\n    }\n  ],\n  \"total\": 47,\n  \"limit\": 10,\n  \"offset\": 0\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Error Examples",
+      "item": [
+        {
+          "name": "401 Unauthorized - No Token",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            },
+            "description": "Example of unauthorized request (no token provided)"
+          },
+          "response": []
+        },
+        {
+          "name": "403 Forbidden - Wrong User",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/different-user-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "different-user-id"]
+            },
+            "description": "Example of forbidden request (accessing another user's profile without ADMIN role)"
+          },
+          "response": []
+        },
+        {
+          "name": "404 Not Found",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/nonexistent-user-id",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "nonexistent-user-id"]
+            },
+            "description": "Example of not found error (user doesn't exist)"
+          },
+          "response": []
+        }
+      ]
+    }
+  ]
+}
