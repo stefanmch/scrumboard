@@ -1,10 +1,10 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { PrismaService } from './prisma/prisma.service';
+import { Test, TestingModule } from '@nestjs/testing'
+import { AppController } from './app.controller'
+import { AppService } from './app.service'
+import { PrismaService } from './prisma/prisma.service'
 
 describe('AppController', () => {
-  let appController: AppController;
+  let appController: AppController
 
   beforeEach(async () => {
     const app: TestingModule = await Test.createTestingModule({
@@ -21,14 +21,14 @@ describe('AppController', () => {
           },
         },
       ],
-    }).compile();
+    }).compile()
 
-    appController = app.get<AppController>(AppController);
-  });
+    appController = app.get<AppController>(AppController)
+  })
 
   describe('root', () => {
     it('should return "Hello World!"', () => {
-      expect(appController.getHello()).toBe('Hello World!');
-    });
-  });
-});
+      expect(appController.getHello()).toBe('Hello World!')
+    })
+  })
+})
