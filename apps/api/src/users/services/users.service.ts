@@ -6,7 +6,7 @@ import {
 } from '@nestjs/common'
 import { PrismaService } from '../../prisma/prisma.service'
 import { FileStorageService } from './file-storage.service'
-import * as bcrypt from 'bcrypt'
+import { HashService } from '../../auth/services/hash.service'
 import {
   UpdateUserDto,
   ChangePasswordDto,
@@ -18,7 +18,8 @@ import {
 export class UsersService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly fileStorageService: FileStorageService
+    private readonly fileStorageService: FileStorageService,
+    private readonly hashService: HashService
   ) {}
 
   async findOne(userId: string) {
@@ -130,7 +131,7 @@ export class UsersService {
     }
 
     // Verify old password
-    const isOldPasswordValid = await bcrypt.compare(
+    const isOldPasswordValid = await this.hashService.comparePasswords(
       changePasswordDto.oldPassword,
       user.password
     )
@@ -140,7 +141,7 @@ export class UsersService {
     }
 
     // Check if new password is different from old password
-    const isSamePassword = await bcrypt.compare(
+    const isSamePassword = await this.hashService.comparePasswords(
       changePasswordDto.newPassword,
       user.password
     )
@@ -152,7 +153,9 @@ export class UsersService {
     }
 
     // Hash new password
-    const hashedPassword = await bcrypt.hash(changePasswordDto.newPassword, 10)
+    const hashedPassword = await this.hashService.hashPassword(
+      changePasswordDto.newPassword
+    )
 
     // Update password
     await this.prisma.user.update({
