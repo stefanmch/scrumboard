@@ -200,13 +200,11 @@ describe('Authentication API (e2e)', () => {
 
     it('should reject login with unverified email', async () => {
       // Create unverified user
-      await request(app.getHttpServer())
-        .post('/auth/register')
-        .send({
-          email: 'unverified@example.com',
-          password: 'Password123!',
-          name: 'Unverified User',
-        })
+      await request(app.getHttpServer()).post('/auth/register').send({
+        email: 'unverified@example.com',
+        password: 'Password123!',
+        name: 'Unverified User',
+      })
 
       const response = await request(app.getHttpServer())
         .post('/auth/login')
@@ -415,10 +413,7 @@ describe('Authentication API (e2e)', () => {
     })
 
     it('should reject logout without authorization', async () => {
-      await request(app.getHttpServer())
-        .post('/auth/logout')
-        .send()
-        .expect(401)
+      await request(app.getHttpServer()).post('/auth/logout').send().expect(401)
     })
 
     it('should reject logout with invalid token', async () => {
@@ -457,9 +452,7 @@ describe('Authentication API (e2e)', () => {
     })
 
     it('should reject request without authorization', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/me')
-        .expect(401)
+      await request(app.getHttpServer()).get('/auth/me').expect(401)
     })
 
     it('should reject request with invalid token', async () => {
@@ -472,7 +465,8 @@ describe('Authentication API (e2e)', () => {
     it('should reject request with expired token', async () => {
       // Note: Testing actual token expiration requires waiting or mocking time
       // This is a placeholder for the test structure
-      const expiredToken = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjF9.invalid'
+      const expiredToken =
+        'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0NTY3ODkwIiwibmFtZSI6IkpvaG4gRG9lIiwiaWF0IjoxNTE2MjM5MDIyLCJleHAiOjF9.invalid'
 
       await request(app.getHttpServer())
         .get('/auth/me')
@@ -848,9 +842,7 @@ describe('Authentication API (e2e)', () => {
     })
 
     it('should reject request without authorization', async () => {
-      await request(app.getHttpServer())
-        .get('/auth/sessions')
-        .expect(401)
+      await request(app.getHttpServer()).get('/auth/sessions').expect(401)
     })
   })
 
@@ -904,7 +896,7 @@ describe('Authentication API (e2e)', () => {
         .expect(401)
     })
 
-    it('should not allow revoking another user\'s session', async () => {
+    it("should not allow revoking another user's session", async () => {
       // Create another user
       const registerResponse = await request(app.getHttpServer())
         .post('/auth/register')

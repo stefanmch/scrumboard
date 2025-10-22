@@ -12,7 +12,12 @@ import {
   Ip,
   Headers,
 } from '@nestjs/common'
-import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger'
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBearerAuth,
+} from '@nestjs/swagger'
 import { Throttle } from '@nestjs/throttler'
 import { Request } from 'express'
 import { AuthService } from './services/auth.service'
@@ -44,8 +49,15 @@ export class AuthController {
   @HttpCode(HttpStatus.CREATED)
   @Throttle({ default: { limit: 5, ttl: 60000 } }) // 5 requests per minute
   @ApiOperation({ summary: 'Register a new user account' })
-  @ApiResponse({ status: 201, description: 'User successfully registered', type: AuthResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid input or email already exists' })
+  @ApiResponse({
+    status: 201,
+    description: 'User successfully registered',
+    type: AuthResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid input or email already exists',
+  })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async register(
     @Body() registerDto: RegisterDto,
@@ -61,9 +73,16 @@ export class AuthController {
   @UseGuards(UserThrottlerGuard)
   @Throttle({ default: { limit: 5, ttl: 900000 } }) // 5 requests per 15 minutes per user (tracked by email, not IP)
   @ApiOperation({ summary: 'Login with email and password' })
-  @ApiResponse({ status: 200, description: 'Login successful', type: AuthResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Login successful',
+    type: AuthResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Invalid credentials' })
-  @ApiResponse({ status: 429, description: 'Too many login attempts for this account' })
+  @ApiResponse({
+    status: 429,
+    description: 'Too many login attempts for this account',
+  })
   async login(
     @Body() loginDto: LoginDto,
     @Ip() ipAddress: string,
@@ -89,7 +108,11 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 20, ttl: 60000 } }) // 20 requests per minute
   @ApiOperation({ summary: 'Refresh access token using refresh token' })
-  @ApiResponse({ status: 200, description: 'Token refreshed successfully', type: RefreshResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully',
+    type: RefreshResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Invalid or expired refresh token' })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async refresh(
@@ -129,7 +152,11 @@ export class AuthController {
   @UseGuards(SimpleJwtAuthGuard)
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: 'Get current authenticated user profile' })
-  @ApiResponse({ status: 200, description: 'User profile retrieved', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'User profile retrieved',
+    type: UserResponseDto,
+  })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
   async getCurrentUser(
     @CurrentUser() user: JwtPayload
@@ -158,7 +185,10 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 3, ttl: 60000 } }) // 3 requests per minute
   @ApiOperation({ summary: 'Request password reset email' })
-  @ApiResponse({ status: 200, description: 'Password reset email sent if account exists' })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset email sent if account exists',
+  })
   @ApiResponse({ status: 429, description: 'Too many requests' })
   async forgotPassword(
     @Body() forgotPasswordDto: ForgotPasswordDto

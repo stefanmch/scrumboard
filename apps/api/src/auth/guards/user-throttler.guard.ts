@@ -39,7 +39,9 @@ export class UserThrottlerGuard extends ThrottlerGuard {
   /**
    * Override error handling to provide user-friendly messages
    */
-  protected async throwThrottlingException(context: ExecutionContext): Promise<void> {
+  protected async throwThrottlingException(
+    context: ExecutionContext
+  ): Promise<void> {
     const req = context.switchToHttp().getRequest<Request>()
     const identifier = req.body?.email || req.user?.['sub'] || 'your account'
 
