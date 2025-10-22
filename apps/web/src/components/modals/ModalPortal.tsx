@@ -30,7 +30,9 @@ class ModalRootManager {
       if (!this.modalRoot) {
         this.modalRoot = document.createElement('div')
         this.modalRoot.id = 'modal-root'
-        this.modalRoot.className = 'fixed inset-0 z-50 pointer-events-none'
+        // Don't use pointer-events-none on the root - let children handle it
+        this.modalRoot.className = 'fixed inset-0 z-50'
+        this.modalRoot.style.pointerEvents = 'none'
         document.body.appendChild(this.modalRoot)
       }
       this.isInitialized = true
