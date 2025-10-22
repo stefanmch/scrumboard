@@ -8,6 +8,7 @@ import {
 import { UsersService } from './users.service'
 import { PrismaService } from '../../prisma/prisma.service'
 import { HashService } from '../../auth/services/hash.service'
+import { FileStorageService } from './file-storage.service'
 import { UserRole } from '@prisma/client'
 
 describe('UsersService', () => {
@@ -32,6 +33,12 @@ describe('UsersService', () => {
     hashPassword: jest.fn(),
     comparePasswords: jest.fn(),
     validatePasswordStrength: jest.fn(),
+  }
+
+  const mockFileStorageService = {
+    uploadFile: jest.fn(),
+    deleteFile: jest.fn(),
+    getFileUrl: jest.fn(),
   }
 
   const mockUser = {
@@ -66,6 +73,10 @@ describe('UsersService', () => {
         {
           provide: HashService,
           useValue: mockHashService,
+        },
+        {
+          provide: FileStorageService,
+          useValue: mockFileStorageService,
         },
       ],
     }).compile()
