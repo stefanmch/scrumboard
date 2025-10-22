@@ -208,6 +208,20 @@ export default function ProfilePage() {
       }
       setUser(result.user)
       setAvatarFile(null)
+
+      // Update user cookie to reflect new avatar in UserMenu
+      const updatedUserCookie = {
+        id: result.user.id,
+        email: result.user.email,
+        name: result.user.name,
+        role: result.user.role,
+        avatar: result.user.avatar,
+      }
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(updatedUserCookie))}; path=/; max-age=${60 * 60 * 24 * 7}`
+
+      // Trigger auth change event to update UI components
+      window.dispatchEvent(new Event('auth-change'))
+
       showSuccess('Avatar uploaded successfully', 'Success')
     } catch (error) {
       showError(error as Error, 'Failed to upload avatar')

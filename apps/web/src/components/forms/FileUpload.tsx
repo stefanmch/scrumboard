@@ -27,6 +27,13 @@ export const FileUpload: React.FC<FileUploadProps> = ({
   const [dragActive, setDragActive] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Update preview URL when currentFile changes (e.g., after loading user data)
+  React.useEffect(() => {
+    if (currentFile) {
+      setPreviewUrl(currentFile)
+    }
+  }, [currentFile])
+
   const handleFile = (file: File | null) => {
     if (!file) {
       setPreviewUrl(null)
@@ -116,17 +123,24 @@ export const FileUpload: React.FC<FileUploadProps> = ({
           <div className="relative">
             <img
               src={previewUrl}
-              alt="Preview"
+              alt="Avatar preview"
               className="mx-auto h-32 w-32 object-cover rounded-full"
+              onError={(e) => {
+                // If image fails to load, hide the broken image
+                console.error('Failed to load avatar image:', previewUrl)
+                setPreviewUrl(null)
+              }}
             />
-            <button
-              type="button"
-              onClick={handleRemove}
-              className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
-              disabled={disabled}
-            >
-              <X className="h-4 w-4" />
-            </button>
+            {!disabled && (
+              <button
+                type="button"
+                onClick={handleRemove}
+                className="absolute top-0 right-0 p-1 bg-red-500 text-white rounded-full hover:bg-red-600 focus:outline-none focus:ring-2 focus:ring-red-500"
+                disabled={disabled}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            )}
           </div>
         ) : (
           <div className="text-center">

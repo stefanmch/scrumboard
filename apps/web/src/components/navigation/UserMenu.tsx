@@ -50,21 +50,30 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   const getInitials = (name: string) => {
-    if (!name || name.trim().length === 0) return '?'
+    if (!name || name.trim().length === 0) {
+      console.log('UserMenu: Empty name, returning ?')
+      return '?'
+    }
 
+    console.log('UserMenu: Getting initials for name:', name)
     const parts = name.trim().split(/\s+/) // Split by any whitespace
+    console.log('UserMenu: Name parts:', parts)
 
     if (parts.length === 1) {
       // Single word name - take first 2 characters
-      return parts[0].slice(0, 2).toUpperCase()
+      const initials = parts[0].slice(0, 2).toUpperCase()
+      console.log('UserMenu: Single word, initials:', initials)
+      return initials
     }
 
     // Multiple words - take first letter of first 2 words
-    return parts
+    const initials = parts
       .slice(0, 2)
       .map((part) => part[0])
       .join('')
       .toUpperCase()
+    console.log('UserMenu: Multiple words, initials:', initials)
+    return initials
   }
 
   const getUserDisplayName = () => {
@@ -82,15 +91,20 @@ export function UserMenu({ user }: UserMenuProps) {
         aria-expanded={isOpen}
       >
         {/* Avatar */}
-        <div className="user-avatar w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-medium">
+        <div className="user-avatar w-8 h-8 rounded-full bg-primary-600 text-white flex items-center justify-center text-sm font-medium overflow-hidden">
           {user?.avatar ? (
             <img
               src={user.avatar}
               alt={user.name}
               className="w-full h-full rounded-full object-cover"
+              onError={(e) => {
+                console.error('UserMenu: Failed to load avatar image:', user.avatar)
+                // Hide the broken image by removing src
+                e.currentTarget.style.display = 'none'
+              }}
             />
           ) : (
-            <span>{user ? getInitials(user.name) : '?'}</span>
+            <span className="text-xs">{user ? getInitials(user.name) : '?'}</span>
           )}
         </div>
 
