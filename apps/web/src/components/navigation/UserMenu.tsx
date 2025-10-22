@@ -39,6 +39,10 @@ export function UserMenu({ user }: UserMenuProps) {
   const handleLogout = async () => {
     try {
       await logoutAction()
+
+      // Trigger auth change event to update UI components
+      window.dispatchEvent(new Event('auth-change'))
+
       router.push('/login')
     } catch (error) {
       console.error('Logout error:', error)

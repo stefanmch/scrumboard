@@ -67,6 +67,9 @@ export default function LoginPage() {
 
       showSuccess(`Welcome back, ${result.user.name}!`, 'Login Successful')
 
+      // Trigger auth change event to update UI components
+      window.dispatchEvent(new Event('auth-change'))
+
       // Redirect to home page or dashboard
       router.push('/')
     } catch (error) {

@@ -15,8 +15,8 @@ export function TopNav() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | undefined>(undefined)
 
-  // Get user from cookies on mount
-  useEffect(() => {
+  // Function to read user from cookies
+  const getUserFromCookies = () => {
     const cookies = document.cookie.split(';')
     const userCookie = cookies.find((cookie) => cookie.trim().startsWith('user='))
 
@@ -24,10 +24,29 @@ export function TopNav() {
       try {
         const userValue = userCookie.trim().substring('user='.length)
         const userData = JSON.parse(decodeURIComponent(userValue))
-        setUser(userData)
+        return userData
       } catch (error) {
         console.error('Failed to parse user cookie:', error)
+        return undefined
       }
+    }
+    return undefined
+  }
+
+  // Get user from cookies on mount and set up listener for auth changes
+  useEffect(() => {
+    // Initial load
+    setUser(getUserFromCookies())
+
+    // Listen for auth state changes (login/logout)
+    const handleAuthChange = () => {
+      setUser(getUserFromCookies())
+    }
+
+    window.addEventListener('auth-change', handleAuthChange)
+
+    return () => {
+      window.removeEventListener('auth-change', handleAuthChange)
     }
   }, [])
 
