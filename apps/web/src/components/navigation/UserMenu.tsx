@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { ChevronDown, User, Settings, LogOut, Shield } from 'lucide-react'
+import { ChevronDown, User, Settings, LogOut, Shield, LogIn, UserPlus } from 'lucide-react'
 import { logoutAction } from '@/app/actions/auth'
 
 interface UserMenuProps {
@@ -97,59 +97,89 @@ export function UserMenu({ user }: UserMenuProps) {
       {/* Dropdown Menu */}
       {isOpen && (
         <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
-          {/* User Info Section */}
-          {user && (
-            <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
-              <p className="text-sm font-medium text-gray-900 dark:text-white">
-                {user.name}
-              </p>
-              <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
-                {user.email}
-              </p>
-              {user.role && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
-                  <Shield className="w-3 h-3" />
-                  {user.role}
+          {user ? (
+            <>
+              {/* Authenticated User Menu */}
+              {/* User Info Section */}
+              <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                <p className="text-sm font-medium text-gray-900 dark:text-white">
+                  {user.name}
                 </p>
-              )}
-            </div>
+                <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+                  {user.email}
+                </p>
+                {user.role && (
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 flex items-center gap-1">
+                    <Shield className="w-3 h-3" />
+                    {user.role}
+                  </p>
+                )}
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push('/profile')
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                >
+                  <User className="w-4 h-4" />
+                  Profile
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push('/settings')
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                >
+                  <Settings className="w-4 h-4" />
+                  Settings
+                </button>
+              </div>
+
+              {/* Logout */}
+              <div className="border-t border-gray-200 dark:border-gray-700 py-1">
+                <button
+                  onClick={handleLogout}
+                  className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3"
+                >
+                  <LogOut className="w-4 h-4" />
+                  Sign out
+                </button>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Unauthenticated User Menu */}
+              <div className="py-1">
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push('/login')
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                >
+                  <LogIn className="w-4 h-4" />
+                  Sign in
+                </button>
+
+                <button
+                  onClick={() => {
+                    setIsOpen(false)
+                    router.push('/register')
+                  }}
+                  className="w-full px-4 py-2 text-left text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center gap-3 font-medium"
+                >
+                  <UserPlus className="w-4 h-4" />
+                  Create account
+                </button>
+              </div>
+            </>
           )}
-
-          {/* Menu Items */}
-          <div className="py-1">
-            <button
-              onClick={() => {
-                setIsOpen(false)
-                router.push('/profile')
-              }}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
-            >
-              <User className="w-4 h-4" />
-              Profile
-            </button>
-
-            <button
-              onClick={() => {
-                setIsOpen(false)
-                router.push('/settings')
-              }}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
-            >
-              <Settings className="w-4 h-4" />
-              Settings
-            </button>
-          </div>
-
-          {/* Logout */}
-          <div className="border-t border-gray-200 dark:border-gray-700 py-1">
-            <button
-              onClick={handleLogout}
-              className="w-full px-4 py-2 text-left text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-3"
-            >
-              <LogOut className="w-4 h-4" />
-              Sign out
-            </button>
-          </div>
         </div>
       )}
     </div>
