@@ -21,6 +21,7 @@ export interface AuthResponse {
     email: string
     name: string
     role: string
+    avatar?: string
   }
   accessToken: string
   refreshToken: string
@@ -33,6 +34,7 @@ export interface User {
   email: string
   name: string
   role: string
+  avatar?: string
 }
 
 interface ApiErrorResponse {
