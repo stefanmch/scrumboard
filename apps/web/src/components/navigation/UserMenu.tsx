@@ -127,7 +127,7 @@ export function UserMenu({ user }: UserMenuProps) {
                     setIsOpen(false)
                     router.push('/profile')
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-3"
                 >
                   <User className="w-4 h-4" />
                   Profile
@@ -138,7 +138,7 @@ export function UserMenu({ user }: UserMenuProps) {
                     setIsOpen(false)
                     router.push('/settings')
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-3"
                 >
                   <Settings className="w-4 h-4" />
                   Settings
@@ -165,7 +165,7 @@ export function UserMenu({ user }: UserMenuProps) {
                     setIsOpen(false)
                     router.push('/login')
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-3"
+                  className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white transition-colors flex items-center gap-3"
                 >
                   <LogIn className="w-4 h-4" />
                   Sign in
@@ -176,7 +176,7 @@ export function UserMenu({ user }: UserMenuProps) {
                     setIsOpen(false)
                     router.push('/register')
                   }}
-                  className="w-full px-4 py-2 text-left text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-50 dark:hover:bg-primary-900/20 flex items-center gap-3 font-medium"
+                  className="w-full px-4 py-2 text-left text-sm text-primary-600 dark:text-primary-400 hover:bg-primary-100 dark:hover:bg-primary-900/20 hover:text-primary-700 dark:hover:text-primary-300 transition-colors flex items-center gap-3 font-medium"
                 >
                   <UserPlus className="w-4 h-4" />
                   Create account
