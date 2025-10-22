@@ -8,6 +8,7 @@ import { StoriesModule } from './stories/stories.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { TeamsModule } from './teams/teams.module'
+import { ProjectsModule } from './projects/projects.module'
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 @Module({
@@ -25,6 +26,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     StoriesModule,
     UsersModule,
     TeamsModule,
+    ProjectsModule,
   ],
   controllers: [AppController],
   providers: [
