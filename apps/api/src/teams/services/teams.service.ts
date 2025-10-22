@@ -58,6 +58,7 @@ export class TeamsService {
 
     return new TeamResponseDto({
       ...team,
+      description: team.description ?? undefined,
       members: team.members.map(
         (m) =>
           new TeamMemberResponseDto({
@@ -65,7 +66,7 @@ export class TeamsService {
             userId: m.userId,
             userName: m.user.name,
             userEmail: m.user.email,
-            userAvatar: m.user.avatar,
+            userAvatar: m.user.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -116,6 +117,7 @@ export class TeamsService {
       (team) =>
         new TeamResponseDto({
           ...team,
+          description: team.description ?? undefined,
           members: team.members.map(
             (m) =>
               new TeamMemberResponseDto({
@@ -123,7 +125,7 @@ export class TeamsService {
                 userId: m.userId,
                 userName: m.user.name,
                 userEmail: m.user.email,
-                userAvatar: m.user.avatar,
+                userAvatar: m.user.avatar ?? undefined,
                 teamId: m.teamId,
                 role: m.role,
                 joinedAt: m.joinedAt,
@@ -171,6 +173,7 @@ export class TeamsService {
 
     return new TeamResponseDto({
       ...team,
+      description: team.description ?? undefined,
       members: team.members.map(
         (m) =>
           new TeamMemberResponseDto({
@@ -178,7 +181,7 @@ export class TeamsService {
             userId: m.userId,
             userName: m.user.name,
             userEmail: m.user.email,
-            userAvatar: m.user.avatar,
+            userAvatar: m.user.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -224,6 +227,7 @@ export class TeamsService {
 
     return new TeamResponseDto({
       ...team,
+      description: team.description ?? undefined,
       members: team.members.map(
         (m) =>
           new TeamMemberResponseDto({
@@ -231,7 +235,7 @@ export class TeamsService {
             userId: m.userId,
             userName: m.user.name,
             userEmail: m.user.email,
-            userAvatar: m.user.avatar,
+            userAvatar: m.user.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -316,7 +320,7 @@ export class TeamsService {
       userId: member.userId,
       userName: user.name,
       userEmail: user.email,
-      userAvatar: user.avatar,
+      userAvatar: user.avatar ?? undefined,
       teamId: member.teamId,
       role: member.role,
       joinedAt: member.joinedAt,
@@ -450,7 +454,7 @@ export class TeamsService {
       userId: updatedMember.userId,
       userName: member.user.name,
       userEmail: member.user.email,
-      userAvatar: member.user.avatar,
+      userAvatar: member.user.avatar ?? undefined,
       teamId: updatedMember.teamId,
       role: updatedMember.role,
       joinedAt: updatedMember.joinedAt,

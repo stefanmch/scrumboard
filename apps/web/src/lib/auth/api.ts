@@ -90,11 +90,15 @@ export const authApi = {
 
     const authResponse = await handleAuthResponse<AuthResponse>(response)
 
-    // Store tokens in localStorage
+    // Store tokens in localStorage and cookies
     if (typeof window !== 'undefined') {
       localStorage.setItem('accessToken', authResponse.accessToken)
       localStorage.setItem('refreshToken', authResponse.refreshToken)
       localStorage.setItem('user', JSON.stringify(authResponse.user))
+
+      // Also store in cookies for middleware to access
+      document.cookie = `accessToken=${authResponse.accessToken}; path=/; max-age=${authResponse.expiresIn}`
+      document.cookie = `user=${encodeURIComponent(JSON.stringify(authResponse.user))}; path=/; max-age=${authResponse.expiresIn}`
     }
 
     return authResponse
@@ -118,11 +122,15 @@ export const authApi = {
       }
     }
 
-    // Clear local storage
+    // Clear local storage and cookies
     if (typeof window !== 'undefined') {
       localStorage.removeItem('accessToken')
       localStorage.removeItem('refreshToken')
       localStorage.removeItem('user')
+
+      // Clear cookies
+      document.cookie = 'accessToken=; path=/; max-age=0'
+      document.cookie = 'user=; path=/; max-age=0'
     }
   },
 
@@ -182,5 +190,16 @@ export const authApi = {
 
   isAuthenticated(): boolean {
     return !!this.getAccessToken() && !!this.getCurrentUser()
+  },
+
+  // Clear all auth data (useful when token is invalid)
+  clearAuth(): void {
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('accessToken')
+      localStorage.removeItem('refreshToken')
+      localStorage.removeItem('user')
+      document.cookie = 'accessToken=; path=/; max-age=0'
+      document.cookie = 'user=; path=/; max-age=0'
+    }
   },
 }

@@ -1,7 +1,7 @@
 'use client'
 
-import React, { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import React, { useState, Suspense } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,6 +10,7 @@ import { Input } from '@/components/forms/Input'
 import { Button } from '@/components/forms/Button'
 import { Checkbox } from '@/components/forms/Checkbox'
 import { loginAction } from '@/app/actions/auth'
+import { authApi } from '@/lib/auth/api'
 import { useToast } from '@/components/ui/Toast'
 
 const loginSchema = z.object({
@@ -25,8 +26,9 @@ const loginSchema = z.object({
 
 type LoginFormData = z.infer<typeof loginSchema>
 
-export default function LoginPage() {
+function LoginForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { showError, showSuccess } = useToast()
   const [isLoading, setIsLoading] = useState(false)
 
@@ -47,31 +49,39 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const result = await loginAction({
-        email: data.email,
-        password: data.password,
-      })
+      // Call both server action (for httpOnly cookies) and client API (for localStorage)
+      const [serverResult, clientResult] = await Promise.all([
+        loginAction({
+          email: data.email,
+          password: data.password,
+        }),
+        authApi.login({
+          email: data.email,
+          password: data.password,
+        })
+      ])
 
-      if (!result.success) {
+      if (!serverResult.success) {
         // Handle specific error cases
-        if (result.statusCode === 403 && result.error.includes('verify')) {
+        if (serverResult.statusCode === 403 && serverResult.error.includes('verify')) {
           showError(
             new Error('Please verify your email address before logging in. Check your inbox for the verification link.'),
             'Email Verification Required'
           )
         } else {
-          showError(new Error(result.error), 'Login Failed')
+          showError(new Error(serverResult.error), 'Login Failed')
         }
         return
       }
 
-      showSuccess(`Welcome back, ${result.user.name}!`, 'Login Successful')
+      showSuccess(`Welcome back, ${serverResult.user.name}!`, 'Login Successful')
 
       // Trigger auth change event to update UI components
       window.dispatchEvent(new Event('auth-change'))
 
-      // Redirect to home page or dashboard
-      router.push('/')
+      // Get redirect URL from query params or default to home
+      const redirect = searchParams.get('redirect') || '/'
+      router.push(redirect)
     } catch (error) {
       console.error('Unexpected login error:', error)
       showError(
@@ -192,5 +202,17 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    }>
+      <LoginForm />
+    </Suspense>
   )
 }
