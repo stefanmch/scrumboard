@@ -10,7 +10,15 @@ import { Select } from '@/components/forms/Select'
 import { FileUpload } from '@/components/forms/FileUpload'
 import { Checkbox } from '@/components/forms/Checkbox'
 import { useToast } from '@/components/ui/Toast'
-import { usersApi, type User, type UpdateUserDto, type ChangePasswordDto } from '@/lib/users/api'
+import {
+  getUserProfileAction,
+  updateUserProfileAction,
+  changePasswordAction,
+  uploadAvatarAction,
+  type User,
+  type UpdateUserDto,
+  type ChangePasswordDto,
+} from '@/app/actions/users'
 import { timezones } from '@/lib/data/timezones'
 import { User as UserIcon, Mail, Clock, Bell, Lock } from 'lucide-react'
 
@@ -76,27 +84,44 @@ export default function ProfilePage() {
 
   const loadUserProfile = async () => {
     try {
-      // Get current user ID from auth context or local storage
-      const currentUserId = localStorage.getItem('userId')
-      if (!currentUserId) {
+      // Get current user from cookies (new cookie-based auth system)
+      const cookies = document.cookie.split(';')
+      const userCookie = cookies.find(cookie => cookie.trim().startsWith('user='))
+
+      if (!userCookie) {
         showError(new Error('User not authenticated'), 'Error')
         return
       }
 
-      const userData = await usersApi.getUserProfile(currentUserId)
-      setUser(userData)
+      let currentUser
+      try {
+        // Remove 'user=' prefix and decode the rest
+        const userValue = userCookie.trim().substring('user='.length)
+        currentUser = JSON.parse(decodeURIComponent(userValue))
+      } catch (error) {
+        console.error('Cookie parsing error:', error)
+        showError(new Error('Invalid user session'), 'Error')
+        return
+      }
+
+      const result = await getUserProfileAction(currentUser.id)
+      if (!result.success) {
+        showError(new Error(result.error), 'Failed to load profile')
+        return
+      }
+      setUser(result.user)
 
       // Populate form with user data
       resetProfile({
-        name: userData.name,
-        bio: userData.bio || '',
-        timezone: userData.timezone || '',
-        workingHoursStart: userData.workingHours?.start || '',
-        workingHoursEnd: userData.workingHours?.end || '',
-        notificationsEmail: userData.notifications?.email ?? true,
-        notificationsPush: userData.notifications?.push ?? true,
-        notificationsMentions: userData.notifications?.mentions ?? true,
-        notificationsUpdates: userData.notifications?.updates ?? true,
+        name: result.user.name,
+        bio: result.user.bio || '',
+        timezone: result.user.timezone || '',
+        workingHoursStart: result.user.workingHours?.start || '',
+        workingHoursEnd: result.user.workingHours?.end || '',
+        notificationsEmail: result.user.notifications?.email ?? true,
+        notificationsPush: result.user.notifications?.push ?? true,
+        notificationsMentions: result.user.notifications?.mentions ?? true,
+        notificationsUpdates: result.user.notifications?.updates ?? true,
       })
     } catch (error) {
       showError(error as Error, 'Failed to load profile')
@@ -125,8 +150,11 @@ export default function ProfilePage() {
         },
       }
 
-      const updatedUser = await usersApi.updateUserProfile(user.id, updateData)
-      setUser(updatedUser)
+      const result = await updateUserProfileAction(user.id, updateData)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      setUser(result.user)
       showSuccess('Profile updated successfully', 'Success')
     } catch (error) {
       showError(error as Error, 'Failed to update profile')
@@ -146,7 +174,10 @@ export default function ProfilePage() {
         newPassword: data.newPassword,
       }
 
-      await usersApi.changePassword(user.id, passwordData)
+      const result = await changePasswordAction(user.id, passwordData)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
       showSuccess('Password changed successfully', 'Success')
       resetPassword()
     } catch (error) {
@@ -162,8 +193,20 @@ export default function ProfilePage() {
     setIsUploadingAvatar(true)
 
     try {
-      const updatedUser = await usersApi.uploadAvatar(user.id, avatarFile)
-      setUser(updatedUser)
+      // Convert file to format that can be serialized for server action
+      const arrayBuffer = await avatarFile.arrayBuffer()
+      const fileData = {
+        name: avatarFile.name,
+        type: avatarFile.type,
+        size: avatarFile.size,
+        arrayBuffer,
+      }
+
+      const result = await uploadAvatarAction(user.id, fileData)
+      if (!result.success) {
+        throw new Error(result.error)
+      }
+      setUser(result.user)
       setAvatarFile(null)
       showSuccess('Avatar uploaded successfully', 'Success')
     } catch (error) {

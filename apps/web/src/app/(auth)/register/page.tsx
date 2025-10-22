@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { Input } from '@/components/forms/Input'
 import { Button } from '@/components/forms/Button'
 import { PasswordStrengthIndicator } from '@/components/forms/PasswordStrengthIndicator'
-import { authApi } from '@/lib/auth/api'
+import { registerAction } from '@/app/actions/auth'
 import { useToast } from '@/components/ui/Toast'
 
 const registerSchema = z.object({
@@ -76,14 +76,19 @@ export default function RegisterPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.register({
+      const result = await registerAction({
         name: data.name,
         email: data.email,
         password: data.password,
       })
 
+      if (!result.success) {
+        showError(new Error(result.error), 'Registration Failed')
+        return
+      }
+
       showSuccess(
-        response.message || 'Please check your email to verify your account.',
+        result.message || 'Please check your email to verify your account.',
         'Registration Successful'
       )
 
@@ -92,7 +97,11 @@ export default function RegisterPage() {
         router.push('/login')
       }, 2000)
     } catch (error) {
-      showError(error as Error, 'Registration Failed')
+      console.error('Unexpected registration error:', error)
+      showError(
+        error instanceof Error ? error : new Error('An unexpected error occurred'),
+        'Registration Failed'
+      )
     } finally {
       setIsLoading(false)
     }

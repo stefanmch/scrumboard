@@ -162,7 +162,7 @@ describe('AuthService', () => {
           name: 'Test User',
           password: 'hashed-password',
           role: 'MEMBER',
-          emailVerified: false,
+          emailVerified: true, // Updated: Temporarily true until email service is implemented
           isActive: true,
         },
         select: {
@@ -175,7 +175,7 @@ describe('AuthService', () => {
       })
       expect(result.user).toEqual(mockUser)
       expect(result.message).toBe(
-        'Registration successful. Please check your email to verify your account.'
+        'Registration successful. You can now log in with your credentials.'
       )
     })
 
@@ -345,13 +345,18 @@ describe('AuthService', () => {
       })
     })
 
-    it('should throw ForbiddenException for unverified email', async () => {
+    it('should allow login with unverified email (temporarily disabled check)', async () => {
+      // Updated: Email verification check is temporarily disabled
       const unverifiedUser = { ...mockUser, emailVerified: false }
       mockPrismaService.user.findUnique.mockResolvedValue(unverifiedUser as any)
+      mockPrismaService.loginAttempt.create.mockResolvedValue({} as any)
+      mockPrismaService.user.update.mockResolvedValue(unverifiedUser as any)
+      mockPrismaService.refreshToken.create.mockResolvedValue({} as any)
 
-      await expect(service.login(loginDto)).rejects.toThrow(
-        new ForbiddenException('Please verify your email before logging in')
-      )
+      // Should not throw - verification check is commented out
+      const result = await service.login(loginDto)
+      expect(result.user).toBeDefined()
+      expect(result.tokens).toBeDefined()
     })
 
     it('should throw ForbiddenException for inactive account', async () => {

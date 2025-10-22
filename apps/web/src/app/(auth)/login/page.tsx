@@ -9,7 +9,7 @@ import Link from 'next/link'
 import { Input } from '@/components/forms/Input'
 import { Button } from '@/components/forms/Button'
 import { Checkbox } from '@/components/forms/Checkbox'
-import { authApi } from '@/lib/auth/api'
+import { loginAction } from '@/app/actions/auth'
 import { useToast } from '@/components/ui/Toast'
 
 const loginSchema = z.object({
@@ -47,17 +47,34 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await authApi.login({
+      const result = await loginAction({
         email: data.email,
         password: data.password,
       })
 
-      showSuccess(`Welcome back, ${response.user.name}!`, 'Login Successful')
+      if (!result.success) {
+        // Handle specific error cases
+        if (result.statusCode === 403 && result.error.includes('verify')) {
+          showError(
+            new Error('Please verify your email address before logging in. Check your inbox for the verification link.'),
+            'Email Verification Required'
+          )
+        } else {
+          showError(new Error(result.error), 'Login Failed')
+        }
+        return
+      }
+
+      showSuccess(`Welcome back, ${result.user.name}!`, 'Login Successful')
 
       // Redirect to home page or dashboard
       router.push('/')
     } catch (error) {
-      showError(error as Error, 'Login Failed')
+      console.error('Unexpected login error:', error)
+      showError(
+        error instanceof Error ? error : new Error('An unexpected error occurred'),
+        'Login Failed'
+      )
     } finally {
       setIsLoading(false)
     }
