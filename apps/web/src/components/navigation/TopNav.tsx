@@ -1,10 +1,35 @@
-"use client";
+'use client'
 
-import { Search, Bell, ChevronDown, Menu } from 'lucide-react';
-import { useState } from 'react';
+import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { UserMenu } from './UserMenu'
+
+interface User {
+  name: string
+  email: string
+  avatar?: string
+  role?: string
+}
 
 export function TopNav() {
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [user, setUser] = useState<User | undefined>(undefined)
+
+  // Get user from cookies on mount
+  useEffect(() => {
+    const cookies = document.cookie.split(';')
+    const userCookie = cookies.find((cookie) => cookie.trim().startsWith('user='))
+
+    if (userCookie) {
+      try {
+        const userValue = userCookie.trim().substring('user='.length)
+        const userData = JSON.parse(decodeURIComponent(userValue))
+        setUser(userData)
+      } catch (error) {
+        console.error('Failed to parse user cookie:', error)
+      }
+    }
+  }, [])
 
   return (
     <header className="top-nav">
@@ -52,15 +77,9 @@ export function TopNav() {
           </button>
 
           {/* User Menu */}
-          <button className="user-menu-btn" aria-label="User menu">
-            <div className="user-avatar">
-              <span>👤</span>
-            </div>
-            <span className="user-name hidden md:inline">User</span>
-            <ChevronDown className="w-4 h-4 hidden md:inline" />
-          </button>
+          <UserMenu user={user} />
         </div>
       </div>
     </header>
-  );
+  )
 }
