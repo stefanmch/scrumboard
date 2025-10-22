@@ -50,12 +50,21 @@ export function UserMenu({ user }: UserMenuProps) {
   }
 
   const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
+    if (!name || name.trim().length === 0) return '?'
+
+    const parts = name.trim().split(/\s+/) // Split by any whitespace
+
+    if (parts.length === 1) {
+      // Single word name - take first 2 characters
+      return parts[0].slice(0, 2).toUpperCase()
+    }
+
+    // Multiple words - take first letter of first 2 words
+    return parts
+      .slice(0, 2)
+      .map((part) => part[0])
       .join('')
       .toUpperCase()
-      .slice(0, 2)
   }
 
   const getUserDisplayName = () => {
