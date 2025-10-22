@@ -67,7 +67,7 @@ export function UserMenu({ user }: UserMenuProps) {
     <div className="relative" ref={menuRef}>
       {/* User Menu Button */}
       <button
-        className="user-menu-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className="user-menu-btn flex items-center gap-2 px-3 py-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
         onClick={() => setIsOpen(!isOpen)}
         aria-label="User menu"
         aria-expanded={isOpen}
