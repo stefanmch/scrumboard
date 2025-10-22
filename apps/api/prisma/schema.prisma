@@ -19,6 +19,7 @@ model User {
   name              String
   password          String
   avatar            String?
+  bio               String?  // User bio/description
   role              UserRole @default(MEMBER)
   emailVerified     Boolean  @default(false)
   isActive          Boolean  @default(true)

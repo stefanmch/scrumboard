@@ -29,6 +29,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        bio: true,
         avatar: true,
         role: true,
         timeZone: true,
@@ -54,14 +55,42 @@ export class UsersService {
     // Verify user exists
     await this.findOne(userId)
 
+    // Transform DTO to match database schema
+    const updateData: any = {}
+
+    if (updateUserDto.name !== undefined) {
+      updateData.name = updateUserDto.name
+    }
+
+    if (updateUserDto.bio !== undefined) {
+      updateData.bio = updateUserDto.bio
+    }
+
+    if (updateUserDto.avatar !== undefined) {
+      updateData.avatar = updateUserDto.avatar
+    }
+
+    if (updateUserDto.timezone !== undefined) {
+      updateData.timeZone = updateUserDto.timezone
+    }
+
+    if (updateUserDto.workingHours !== undefined) {
+      updateData.workingHours = JSON.stringify(updateUserDto.workingHours)
+    }
+
+    if (updateUserDto.notifications !== undefined) {
+      updateData.notificationPrefs = JSON.stringify(updateUserDto.notifications)
+    }
+
     // Update user profile
     const updatedUser = await this.prisma.user.update({
       where: { id: userId },
-      data: updateUserDto,
+      data: updateData,
       select: {
         id: true,
         email: true,
         name: true,
+        bio: true,
         avatar: true,
         role: true,
         timeZone: true,
@@ -99,6 +128,7 @@ export class UsersService {
         id: true,
         email: true,
         name: true,
+        bio: true,
         avatar: true,
         role: true,
         timeZone: true,
