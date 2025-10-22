@@ -4,6 +4,7 @@ import { AuthService } from './services/auth.service'
 import { SimpleJwtAuthGuard } from './guards/simple-jwt-auth.guard'
 import { RolesGuard } from './guards/roles.guard'
 import { Reflector } from '@nestjs/core'
+import { ThrottlerStorage } from '@nestjs/throttler'
 import {
   RegisterDto,
   LoginDto,
@@ -69,6 +70,22 @@ describe('AuthController', () => {
         {
           provide: 'SimpleJwtService',
           useValue: mockSimpleJwtService,
+        },
+        {
+          provide: 'THROTTLER:MODULE_OPTIONS',
+          useValue: {
+            ttl: 60000,
+            limit: 10,
+            ignoreUserAgents: [],
+            skipIf: () => false,
+          },
+        },
+        {
+          provide: ThrottlerStorage,
+          useValue: {
+            increment: jest.fn().mockResolvedValue({ totalHits: 1, timeToExpire: 60000 }),
+            reset: jest.fn().mockResolvedValue(undefined),
+          },
         },
       ],
     })
