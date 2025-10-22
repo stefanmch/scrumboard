@@ -30,6 +30,22 @@ export class AuthService {
     this.lockoutDuration = parseInt(process.env.LOCKOUT_DURATION || '1800000') // 30 minutes in ms
   }
 
+  /**
+   * Convert relative avatar paths to absolute URLs
+   */
+  private normalizeAvatarUrl(avatar: string | null): string | null {
+    if (!avatar) return null
+
+    // If already a full URL, return as-is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return avatar
+    }
+
+    // Convert relative path to full URL
+    const apiUrl = process.env.API_URL || 'http://localhost:3001'
+    return `${apiUrl}${avatar}`
+  }
+
   async register(registerDto: RegisterDto) {
     // Validate password strength
     const passwordValidation = this.hashService.validatePasswordStrength(
@@ -215,7 +231,7 @@ export class AuthService {
         email: user.email,
         name: user.name,
         role: user.role,
-        avatar: user.avatar,
+        avatar: this.normalizeAvatarUrl(user.avatar),
       },
       tokens,
     }

@@ -2,13 +2,22 @@ import { NestFactory } from '@nestjs/core'
 import { ValidationPipe, Logger } from '@nestjs/common'
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger'
 import { AppModule } from './app.module'
+import { NestExpressApplication } from '@nestjs/platform-express'
+import { join } from 'path'
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule, {
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   })
 
   const logger = new Logger('Bootstrap')
+
+  // Serve static files from uploads directory
+  const uploadDir = process.env.UPLOAD_DIR || 'uploads'
+  app.useStaticAssets(join(process.cwd(), uploadDir), {
+    prefix: '/uploads/',
+  })
+  logger.log(`📁 Serving static files from: ${join(process.cwd(), uploadDir)}`)
 
   // Swagger API Documentation Configuration
   const config = new DocumentBuilder()

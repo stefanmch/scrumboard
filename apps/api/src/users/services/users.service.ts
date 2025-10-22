@@ -22,6 +22,22 @@ export class UsersService {
     private readonly hashService: HashService
   ) {}
 
+  /**
+   * Convert relative avatar paths to absolute URLs
+   */
+  private normalizeAvatarUrl(avatar: string | null): string | null {
+    if (!avatar) return null
+
+    // If already a full URL, return as-is
+    if (avatar.startsWith('http://') || avatar.startsWith('https://')) {
+      return avatar
+    }
+
+    // Convert relative path to full URL
+    const apiUrl = process.env.API_URL || 'http://localhost:3001'
+    return `${apiUrl}${avatar}`
+  }
+
   async findOne(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
@@ -48,7 +64,11 @@ export class UsersService {
       throw new NotFoundException(`User with ID ${userId} not found`)
     }
 
-    return user
+    // Normalize avatar URL to full path
+    return {
+      ...user,
+      avatar: this.normalizeAvatarUrl(user.avatar),
+    }
   }
 
   async update(userId: string, updateUserDto: UpdateUserDto) {

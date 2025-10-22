@@ -67,12 +67,13 @@ export class FileStorageService {
       // Write file to disk
       await fs.writeFile(filepath, file.buffer)
 
-      // Return relative path for database storage
-      const relativePath = `/uploads/avatars/${filename}`
+      // Return path with API URL for direct access
+      const apiUrl = this.configService.get<string>('API_URL') || 'http://localhost:3001'
+      const fullPath = `${apiUrl}/uploads/avatars/${filename}`
 
       return {
         filename,
-        path: relativePath,
+        path: fullPath,
         size: file.size,
         mimetype: file.mimetype,
       }
