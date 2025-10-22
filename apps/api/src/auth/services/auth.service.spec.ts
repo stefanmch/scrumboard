@@ -280,6 +280,7 @@ describe('AuthService', () => {
         email: 'test@example.com',
         name: 'Test User',
         role: 'MEMBER',
+        avatar: null,
       })
       expect(result.tokens).toEqual(mockTokens)
     })
