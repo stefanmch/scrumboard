@@ -23,10 +23,10 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {label && (
           <label
             htmlFor={inputId}
-            className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
+            className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1"
           >
             {label}
-            {props.required && <span className="text-red-500 ml-1" aria-label="required">*</span>}
+            {props.required && <span className="text-red-600 dark:text-red-400 ml-1" aria-label="required">*</span>}
           </label>
         )}
         <div className="relative">
@@ -36,10 +36,13 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             type={inputType}
             className={`
               w-full px-3 py-2 border rounded-md shadow-sm
-              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500
-              disabled:bg-gray-100 disabled:cursor-not-allowed
+              text-gray-900 dark:text-gray-100
+              placeholder:text-gray-500 dark:placeholder:text-gray-400
+              bg-white dark:bg-gray-800
+              focus:outline-none focus:ring-2 focus:ring-blue-600 focus:border-blue-600
+              disabled:bg-gray-100 dark:disabled:bg-gray-700 disabled:cursor-not-allowed disabled:text-gray-500 dark:disabled:text-gray-500
               transition-colors duration-200
-              ${error ? 'border-red-500 focus:ring-red-500 focus:border-red-500' : 'border-gray-300'}
+              ${error ? 'border-red-600 focus:ring-red-600 focus:border-red-600 dark:border-red-500 dark:focus:ring-red-500' : 'border-gray-300 dark:border-gray-600'}
               ${showPasswordToggle ? 'pr-10' : ''}
               ${className}
             `}
@@ -53,7 +56,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-500 hover:text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-600 dark:focus:ring-blue-500 rounded transition-colors"
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               tabIndex={-1}
             >
@@ -68,7 +71,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {error && (
           <p
             id={`${inputId}-error`}
-            className="mt-1 text-sm text-red-600"
+            className="mt-1 text-sm text-red-700 dark:text-red-400"
             role="alert"
           >
             {error}
@@ -77,7 +80,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         {helperText && !error && (
           <p
             id={`${inputId}-helper`}
-            className="mt-1 text-sm text-gray-500"
+            className="mt-1 text-sm text-gray-700 dark:text-gray-300"
           >
             {helperText}
           </p>

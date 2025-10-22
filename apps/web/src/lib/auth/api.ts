@@ -68,7 +68,7 @@ async function handleAuthResponse<T>(response: Response): Promise<T> {
 
 export const authApi = {
   async register(data: RegisterData): Promise<{ user: User; message: string }> {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -80,7 +80,7 @@ export const authApi = {
   },
 
   async login(data: LoginData): Promise<AuthResponse> {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,7 +105,7 @@ export const authApi = {
 
     if (accessToken) {
       try {
-        await fetch(`${API_URL}/auth/logout`, {
+        await fetch(`${API_URL}/api/v1/auth/logout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -127,7 +127,7 @@ export const authApi = {
   },
 
   async verifyEmail(token: string): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/auth/verify-email`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/verify-email`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -139,7 +139,7 @@ export const authApi = {
   },
 
   async forgotPassword(email: string): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/auth/forgot-password`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/forgot-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -151,7 +151,7 @@ export const authApi = {
   },
 
   async resetPassword(token: string, newPassword: string): Promise<{ message: string }> {
-    const response = await fetch(`${API_URL}/auth/reset-password`, {
+    const response = await fetch(`${API_URL}/api/v1/auth/reset-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

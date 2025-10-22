@@ -54,13 +54,14 @@ export class AuthService {
     )
 
     // Create user
+    // TODO: Set emailVerified to false once email service is implemented
     const user = await this.prismaService.user.create({
       data: {
         email: registerDto.email,
         name: registerDto.name,
         password: hashedPassword,
         role: registerDto.role || 'MEMBER',
-        emailVerified: false,
+        emailVerified: true, // Temporarily true until email service is implemented
         isActive: true,
       },
       select: {
@@ -87,8 +88,7 @@ export class AuthService {
 
     return {
       user,
-      message:
-        'Registration successful. Please check your email to verify your account.',
+      message: 'Registration successful. You can now log in with your credentials.',
     }
   }
 
@@ -159,10 +159,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials')
     }
 
-    // Check if email is verified
-    if (!user.emailVerified) {
-      throw new ForbiddenException('Please verify your email before logging in')
-    }
+    // TODO: Re-enable email verification once email service is implemented
+    // if (!user.emailVerified) {
+    //   throw new ForbiddenException('Please verify your email before logging in')
+    // }
 
     // Check if user is active
     if (!user.isActive) {
