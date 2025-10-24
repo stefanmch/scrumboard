@@ -2,7 +2,7 @@ import { ApiError } from '@/lib/api'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
 
-export type ProjectStatus = 'PLANNING' | 'ACTIVE' | 'ON_HOLD' | 'COMPLETED' | 'ARCHIVED'
+export type ProjectStatus = 'ACTIVE' | 'COMPLETED' | 'ARCHIVED'
 
 export interface Project {
   id: string

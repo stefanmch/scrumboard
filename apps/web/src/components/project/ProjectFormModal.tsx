@@ -17,9 +17,7 @@ export interface ProjectFormModalProps {
 }
 
 const STATUS_OPTIONS = [
-  { value: 'PLANNING', label: 'Planning' },
   { value: 'ACTIVE', label: 'Active' },
-  { value: 'ON_HOLD', label: 'On Hold' },
   { value: 'COMPLETED', label: 'Completed' },
   { value: 'ARCHIVED', label: 'Archived' }
 ]
@@ -34,7 +32,7 @@ export const ProjectFormModal: React.FC<ProjectFormModalProps> = ({
   const [formData, setFormData] = useState({
     name: project?.name || '',
     description: project?.description || '',
-    status: (project?.status || 'PLANNING') as ProjectStatus
+    status: (project?.status || 'ACTIVE') as ProjectStatus
   })
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [isSubmitting, setIsSubmitting] = useState(false)
