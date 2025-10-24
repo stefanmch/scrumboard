@@ -48,10 +48,10 @@ export class SimpleJwtAuthGuard implements CanActivate {
 
       // Attach user information to the request
       request.user = {
-        userId: payload.sub,
+        sub: payload.sub,  // Changed from userId to sub to match JwtPayload interface
         email: payload.email,
         roles: payload.roles || [],
-      }
+      } as any
 
       return true
     } catch (error) {

@@ -8,7 +8,7 @@ import { UserRole } from '@prisma/client'
 
 export interface AuthenticatedRequest {
   user: {
-    userId: string
+    sub: string  // Changed from userId to sub to match JwtPayload
     email: string
     roles: string[]
   }
@@ -34,7 +34,7 @@ export class UserAuthorizationGuard implements CanActivate {
     }
 
     // Users can only access their own profile
-    if (user.userId !== requestedUserId) {
+    if (user.sub !== requestedUserId) {
       throw new ForbiddenException('You can only access your own profile')
     }
 

@@ -37,7 +37,7 @@ export class ProjectsController {
     @Body() createProjectDto: CreateProjectDto,
     @CurrentUser() user: any,
   ): Promise<ProjectResponseDto> {
-    return this.projectsService.create(teamId, createProjectDto, user.id)
+    return this.projectsService.create(teamId, createProjectDto, user.sub)
   }
 
   @Get()
@@ -45,7 +45,7 @@ export class ProjectsController {
   @ApiResponse({ status: 200, description: 'Projects retrieved successfully', type: [ProjectResponseDto] })
   @ApiResponse({ status: 403, description: 'User is not a member of the team' })
   async findAll(@Param('teamId') teamId: string, @CurrentUser() user: any): Promise<ProjectResponseDto[]> {
-    return this.projectsService.findAllForTeam(teamId, user.id)
+    return this.projectsService.findAllForTeam(teamId, user.sub)
   }
 
   @Get(':id')
@@ -54,7 +54,7 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'User is not a member of the team' })
   async findOne(@Param('id') id: string, @CurrentUser() user: any): Promise<ProjectResponseDto> {
-    return this.projectsService.findOne(id, user.id)
+    return this.projectsService.findOne(id, user.sub)
   }
 
   @Get(':id/stats')
@@ -63,7 +63,7 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'User is not a member of the team' })
   async getStats(@Param('id') id: string, @CurrentUser() user: any): Promise<ProjectStatsResponseDto> {
-    return this.projectsService.getStats(id, user.id)
+    return this.projectsService.getStats(id, user.sub)
   }
 
   @Patch(':id')
@@ -77,7 +77,7 @@ export class ProjectsController {
     @Body() updateProjectDto: UpdateProjectDto,
     @CurrentUser() user: any,
   ): Promise<ProjectResponseDto> {
-    return this.projectsService.update(id, updateProjectDto, user.id)
+    return this.projectsService.update(id, updateProjectDto, user.sub)
   }
 
   @Delete(':id')
@@ -88,6 +88,6 @@ export class ProjectsController {
   @ApiResponse({ status: 404, description: 'Project not found' })
   @ApiResponse({ status: 403, description: 'User is not a team admin' })
   async remove(@Param('id') id: string, @CurrentUser() user: any): Promise<void> {
-    return this.projectsService.remove(id, user.id)
+    return this.projectsService.remove(id, user.sub)
   }
 }
