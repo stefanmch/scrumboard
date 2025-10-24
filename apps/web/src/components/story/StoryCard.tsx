@@ -52,7 +52,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
 
   return (
     <div
-      className="bg-white rounded-xl shadow-md border border-gray-200 p-5 hover:shadow-lg transition-all duration-200 relative group"
+      className="bg-white dark:bg-gray-800 rounded-xl shadow-md border border-gray-200 dark:border-gray-700 p-5 hover:shadow-lg dark:hover:shadow-gray-900/50 transition-all duration-200 relative group"
       data-testid={`story-card-${story.id}`}
     >
       {/* Action Buttons - positioned to avoid drag area */}
@@ -60,7 +60,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
         {onEdit && (
           <button
             onClick={handleEditClick}
-            className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg pointer-events-auto"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded-lg pointer-events-auto"
             title="Edit story"
             data-testid={`story-edit-button-${story.id}`}
             type="button"
@@ -71,7 +71,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
         {onDelete && (
           <button
             onClick={handleDeleteClick}
-            className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg pointer-events-auto"
+            className="p-1.5 text-gray-400 dark:text-gray-500 hover:text-red-600 dark:hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded-lg pointer-events-auto"
             title="Delete story"
             data-testid={`story-delete-button-${story.id}`}
             type="button"
@@ -82,7 +82,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
       </div>
 
       {/* Main draggable content area */}
-      <div 
+      <div
         {...(dragListeners || {})}
         className={dragListeners ? "cursor-grab active:cursor-grabbing" : ""}
       >
@@ -90,7 +90,7 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
         <div className="flex justify-between items-start mb-3">
           <div className="flex-1 pr-8">
             {/* Title */}
-            <h3 className="font-bold text-gray-900 text-lg line-clamp-2 leading-tight">
+            <h3 className="font-bold text-gray-900 dark:text-gray-100 text-lg line-clamp-2 leading-tight">
               {story.title}
             </h3>
           </div>
@@ -105,19 +105,19 @@ export function StoryCard({ story, onEdit, onDelete, dragListeners }: StoryCardP
         </div>
 
         {/* Description */}
-        <p className="text-sm text-gray-600 mb-4 line-clamp-3 leading-relaxed">
+        <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-3 leading-relaxed">
           {story.description}
         </p>
 
         {/* Footer */}
-        <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+        <div className="flex items-center justify-between pt-3 border-t border-gray-100 dark:border-gray-700">
           {story.assignee && (
-            <div className="flex items-center text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
-              <User className="w-4 h-4 mr-2 text-gray-500" />
+            <div className="flex items-center text-sm text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-700 px-3 py-1 rounded-full">
+              <User className="w-4 h-4 mr-2 text-gray-500 dark:text-gray-400" />
               <span className="font-medium">{typeof story.assignee === 'string' ? story.assignee : story.assignee.name}</span>
             </div>
           )}
-          <div className="flex items-center text-xs text-gray-400">
+          <div className="flex items-center text-xs text-gray-400 dark:text-gray-500">
             <Clock className="w-3 h-3 mr-1" />
             <span>{new Date(story.createdAt).toLocaleDateString('en-US', {
               year: 'numeric',

@@ -16,116 +16,78 @@ export function BoardColumn({ column, onAddStory, onEditStory, onDeleteStory }: 
     id: column.id,
   });
 
-  const getColumnStyle = (status: string) => {
-    const baseStyle = {
-      transition: 'all 0.2s ease',
-    };
+  const getColumnClasses = (status: string) => {
+    const baseClasses = "rounded-xl p-6 w-80 flex-shrink-0 border-2 shadow-lg transition-all duration-200";
 
-    const colorStyle = (() => {
-      switch (status) {
-        case 'todo':
-          return {
-            backgroundColor: '#dbeafe', // blue-100
-            borderColor: '#93c5fd', // blue-300
-          };
-        case 'in-progress':
-          return {
-            backgroundColor: '#fffbeb', // amber-50
-            borderColor: '#fde68a', // amber-200
-          };
-        case 'done':
-          return {
-            backgroundColor: '#ecfdf5', // emerald-50
-            borderColor: '#a7f3d0', // emerald-200
-          };
-        default:
-          return {
-            backgroundColor: '#f9fafb',
-            borderColor: '#e5e7eb',
-          };
-      }
-    })();
-
-    // Add visual feedback when hovering during drag
-    if (isOver) {
-      return {
-        ...baseStyle,
-        ...colorStyle,
-        transform: 'scale(1.02)',
-        boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-      };
-    }
-
-    return {
-      ...baseStyle,
-      ...colorStyle,
-    };
-  };
-
-  const getHeaderStyle = (status: string) => {
+    let statusClasses = "";
     switch (status) {
       case 'todo':
-        return { color: '#1d4ed8' }; // blue-700
+        statusClasses = "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800";
+        break;
       case 'in-progress':
-        return { color: '#a16207' }; // amber-700
+        statusClasses = "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800";
+        break;
       case 'done':
-        return { color: '#047857' }; // emerald-700
+        statusClasses = "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800";
+        break;
       default:
-        return { color: '#374151' };
+        statusClasses = "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700";
+    }
+
+    const hoverClasses = isOver ? "scale-105 shadow-2xl" : "";
+
+    return `${baseClasses} ${statusClasses} ${hoverClasses}`;
+  };
+
+  const getHeaderClasses = (status: string) => {
+    const baseClasses = "font-bold text-lg";
+
+    switch (status) {
+      case 'todo':
+        return `${baseClasses} text-blue-700 dark:text-blue-400`;
+      case 'in-progress':
+        return `${baseClasses} text-amber-700 dark:text-amber-400`;
+      case 'done':
+        return `${baseClasses} text-emerald-700 dark:text-emerald-400`;
+      default:
+        return `${baseClasses} text-gray-700 dark:text-gray-300`;
     }
   };
 
-  const getBadgeStyle = (status: string) => {
+  const getBadgeClasses = (status: string) => {
+    const baseClasses = "ml-3 text-sm px-3 py-1 rounded-full font-medium";
+
     switch (status) {
       case 'todo':
-        return {
-          backgroundColor: '#bfdbfe', // blue-200
-          color: '#1e3a8a', // blue-800
-        };
+        return `${baseClasses} bg-blue-200 dark:bg-blue-800/50 text-blue-800 dark:text-blue-200`;
       case 'in-progress':
-        return {
-          backgroundColor: '#fef3c7', // amber-100
-          color: '#92400e', // amber-800
-        };
+        return `${baseClasses} bg-amber-100 dark:bg-amber-800/50 text-amber-800 dark:text-amber-200`;
       case 'done':
-        return {
-          backgroundColor: '#d1fae5', // emerald-100
-          color: '#065f46', // emerald-800
-        };
+        return `${baseClasses} bg-emerald-100 dark:bg-emerald-800/50 text-emerald-800 dark:text-emerald-200`;
       default:
-        return {
-          backgroundColor: '#f3f4f6',
-          color: '#374151',
-        };
+        return `${baseClasses} bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300`;
     }
   };
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
-      className="rounded-xl p-6 w-80 flex-shrink-0 border-2 shadow-lg"
-      style={getColumnStyle(column.status)}
+      className={getColumnClasses(column.status)}
     >
       {/* Column Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center">
-          <h2 
-            className="font-bold text-lg"
-            style={getHeaderStyle(column.status)}
-          >
+          <h2 className={getHeaderClasses(column.status)}>
             {column.title}
           </h2>
-          <span 
-            className="ml-3 text-sm px-3 py-1 rounded-full font-medium"
-            style={getBadgeStyle(column.status)}
-          >
+          <span className={getBadgeClasses(column.status)}>
             {column.stories.length}
           </span>
         </div>
         <button
           type="button"
           onClick={onAddStory}
-          className="p-2 text-gray-500 hover:text-gray-700 hover:bg-white hover:bg-opacity-50 rounded-lg transition-all duration-200 flex items-center justify-center"
+          className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:bg-white/50 dark:hover:bg-gray-700/50 rounded-lg transition-all duration-200 flex items-center justify-center"
           title="Add new story"
           data-testid={`add-story-button-${column.id}`}
         >
@@ -144,10 +106,10 @@ export function BoardColumn({ column, onAddStory, onEditStory, onDeleteStory }: 
               onDelete={onDeleteStory}
             />
           ))}
-          
+
           {/* Drop Zone Indicator */}
           {isOver && column.stories.length === 0 && (
-            <div className="border-2 border-dashed border-gray-300 rounded-xl p-8 text-center text-gray-500">
+            <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center text-gray-500 dark:text-gray-400">
               Drop story here
             </div>
           )}
