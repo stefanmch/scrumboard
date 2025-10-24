@@ -1,6 +1,6 @@
 import React, { ReactElement } from 'react'
 import { render, RenderOptions } from '@testing-library/react'
-import { Story, StoryStatus } from '@/types'
+import { Story, StoryStatus, Sprint, SprintStatus, SprintMetrics, BurndownDataPoint } from '@/types'
 
 // Custom render function that includes any providers
 const customRender = (
@@ -42,6 +42,50 @@ export const createMockStory = (overrides: Partial<Story> = {}): Story => ({
   comments: [],
   ...overrides,
 })
+
+export const createMockSprint = (overrides: Partial<Sprint> = {}): Sprint => ({
+  id: 'sprint-1',
+  name: 'Sprint 1',
+  goal: 'Complete features',
+  startDate: new Date('2025-11-01'),
+  endDate: new Date('2025-11-15'),
+  status: 'PLANNING' as SprintStatus,
+  capacity: 40,
+  projectId: 'project-1',
+  createdAt: new Date('2025-10-24'),
+  updatedAt: new Date('2025-10-24'),
+  stories: [],
+  ...overrides,
+})
+
+export const createMockSprintMetrics = (
+  overrides: Partial<SprintMetrics> = {}
+): SprintMetrics => ({
+  totalPoints: 40,
+  completedPoints: 20,
+  remainingPoints: 20,
+  totalStories: 10,
+  completedStories: 5,
+  progress: 50,
+  ...overrides,
+})
+
+export const createMockBurndownData = (
+  days: number = 14,
+  totalPoints: number = 40
+): BurndownDataPoint[] => {
+  const data: BurndownDataPoint[] = []
+  for (let i = 0; i <= days; i++) {
+    const date = new Date('2025-11-01')
+    date.setDate(date.getDate() + i)
+    data.push({
+      date: date.toISOString().split('T')[0],
+      ideal: Math.max(0, totalPoints - (totalPoints / days) * i),
+      actual: Math.max(0, totalPoints - (totalPoints / days) * i * 0.9),
+    })
+  }
+  return data
+}
 
 export const createMockColumn = (status: StoryStatus, stories: Story[] = []) => ({
   id: status.toLowerCase().replace('_', '-'),
