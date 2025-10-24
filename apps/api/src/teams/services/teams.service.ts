@@ -28,14 +28,22 @@ export class TeamsService {
     createTeamDto: CreateTeamDto,
     creatorId: string
   ): Promise<TeamResponseDto> {
+    if (!creatorId) {
+      throw new BadRequestException('Creator ID is required')
+    }
+
     const team = await this.prisma.team.create({
       data: {
         name: createTeamDto.name,
         description: createTeamDto.description,
-        creatorId,
+        creator: {
+          connect: { id: creatorId }
+        },
         members: {
           create: {
-            userId: creatorId,
+            user: {
+              connect: { id: creatorId }
+            },
             role: UserRole.ADMIN,
           },
         },
@@ -64,9 +72,9 @@ export class TeamsService {
           new TeamMemberResponseDto({
             id: m.id,
             userId: m.userId,
-            userName: m.user.name,
-            userEmail: m.user.email,
-            userAvatar: m.user.avatar ?? undefined,
+            userName: m.user?.name ?? 'Unknown',
+            userEmail: m.user?.email ?? '',
+            userAvatar: m.user?.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -123,9 +131,9 @@ export class TeamsService {
               new TeamMemberResponseDto({
                 id: m.id,
                 userId: m.userId,
-                userName: m.user.name,
-                userEmail: m.user.email,
-                userAvatar: m.user.avatar ?? undefined,
+                userName: m.user?.name ?? 'Unknown',
+                userEmail: m.user?.email ?? '',
+                userAvatar: m.user?.avatar ?? undefined,
                 teamId: m.teamId,
                 role: m.role,
                 joinedAt: m.joinedAt,
@@ -179,9 +187,9 @@ export class TeamsService {
           new TeamMemberResponseDto({
             id: m.id,
             userId: m.userId,
-            userName: m.user.name,
-            userEmail: m.user.email,
-            userAvatar: m.user.avatar ?? undefined,
+            userName: m.user?.name ?? 'Unknown',
+            userEmail: m.user?.email ?? '',
+            userAvatar: m.user?.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -233,9 +241,9 @@ export class TeamsService {
           new TeamMemberResponseDto({
             id: m.id,
             userId: m.userId,
-            userName: m.user.name,
-            userEmail: m.user.email,
-            userAvatar: m.user.avatar ?? undefined,
+            userName: m.user?.name ?? 'Unknown',
+            userEmail: m.user?.email ?? '',
+            userAvatar: m.user?.avatar ?? undefined,
             teamId: m.teamId,
             role: m.role,
             joinedAt: m.joinedAt,
@@ -452,9 +460,9 @@ export class TeamsService {
     return new TeamMemberResponseDto({
       id: updatedMember.id,
       userId: updatedMember.userId,
-      userName: member.user.name,
-      userEmail: member.user.email,
-      userAvatar: member.user.avatar ?? undefined,
+      userName: member.user?.name ?? 'Unknown',
+      userEmail: member.user?.email ?? '',
+      userAvatar: member.user?.avatar ?? undefined,
       teamId: updatedMember.teamId,
       role: updatedMember.role,
       joinedAt: updatedMember.joinedAt,
