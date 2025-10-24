@@ -9,6 +9,7 @@ import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { TeamsModule } from './teams/teams.module'
 import { ProjectsModule } from './projects/projects.module'
+import { SprintsModule } from './sprints/sprints.module'
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
 
 @Module({
@@ -27,6 +28,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     UsersModule,
     TeamsModule,
     ProjectsModule,
+    SprintsModule,
   ],
   controllers: [AppController],
   providers: [
