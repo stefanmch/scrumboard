@@ -1,0 +1,1088 @@
+openapi: 3.0.0
+info:
+  title: Sprint Management API
+  version: 1.0.0
+  description: |
+    Comprehensive API for managing agile sprints, including creation, lifecycle management,
+    story assignment, metrics tracking, and collaboration features.
+
+    ## Features
+    - Complete sprint lifecycle management (PLANNING → ACTIVE → COMPLETED)
+    - User story assignment and tracking
+    - Real-time metrics and burndown charts
+    - Comment and collaboration system
+    - JWT-based authentication
+
+    ## Sprint Lifecycle
+    1. **PLANNING** - Initial state when sprint is created
+    2. **ACTIVE** - Sprint is currently running (only one per project)
+    3. **COMPLETED** - Sprint has finished with calculated velocity
+
+  contact:
+    name: API Support
+    email: api-support@example.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://api.example.com/api
+    description: Production server
+  - url: https://staging-api.example.com/api
+    description: Staging server
+  - url: http://localhost:3000/api
+    description: Local development server
+
+tags:
+  - name: Sprints
+    description: Sprint lifecycle and management operations
+  - name: Stories
+    description: Story assignment within sprints
+  - name: Metrics
+    description: Sprint metrics and analytics
+  - name: Comments
+    description: Sprint collaboration and comments
+
+security:
+  - BearerAuth: []
+
+paths:
+  /sprints:
+    get:
+      tags:
+        - Sprints
+      summary: List all sprints
+      description: |
+        Retrieves all sprints with optional filtering by project and status.
+        Results are ordered by status (ascending) then start date (descending).
+      operationId: listSprints
+      parameters:
+        - name: projectId
+          in: query
+          description: Filter sprints by project UUID
+          required: false
+          schema:
+            type: string
+            format: uuid
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        - name: status
+          in: query
+          description: Filter sprints by status
+          required: false
+          schema:
+            $ref: '#/components/schemas/SprintStatus'
+      responses:
+        '200':
+          description: Successful response with array of sprints
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Sprint'
+              example:
+                - id: "sprint-uuid-1"
+                  name: "Sprint 1"
+                  goal: "User authentication"
+                  startDate: "2025-01-01T00:00:00.000Z"
+                  endDate: "2025-01-14T23:59:59.999Z"
+                  capacity: 40
+                  velocity: 35
+                  status: "COMPLETED"
+                  projectId: "project-uuid"
+                  stories: []
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    post:
+      tags:
+        - Sprints
+      summary: Create a new sprint
+      description: |
+        Creates a new sprint in PLANNING status. Validates that:
+        - End date is after start date
+        - Sprint dates don't overlap with other active/planning sprints in the same project
+      operationId: createSprint
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSprintDto'
+            example:
+              name: "Sprint 1"
+              goal: "Implement user authentication and profile management"
+              startDate: "2025-01-01T00:00:00.000Z"
+              endDate: "2025-01-14T23:59:59.999Z"
+              capacity: 40
+              projectId: "123e4567-e89b-12d3-a456-426614174000"
+      responses:
+        '201':
+          description: Sprint created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+              example:
+                id: "sprint-uuid-123"
+                name: "Sprint 1"
+                goal: "Implement user authentication and profile management"
+                startDate: "2025-01-01T00:00:00.000Z"
+                endDate: "2025-01-14T23:59:59.999Z"
+                capacity: 40
+                velocity: null
+                status: "PLANNING"
+                projectId: "123e4567-e89b-12d3-a456-426614174000"
+                createdAt: "2025-10-24T12:00:00.000Z"
+                updatedAt: "2025-10-24T12:00:00.000Z"
+                stories: []
+                comments: []
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '409':
+          $ref: '#/components/responses/ConflictError'
+
+  /sprints/{id}:
+    get:
+      tags:
+        - Sprints
+      summary: Get sprint by ID
+      description: Retrieves detailed information about a specific sprint including stories, comments, and retrospectives
+      operationId: getSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '200':
+          description: Sprint details retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    patch:
+      tags:
+        - Sprints
+      summary: Update sprint
+      description: |
+        Updates sprint properties. All fields are optional.
+        Validates date range if dates are updated.
+      operationId: updateSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateSprintDto'
+            example:
+              name: "Sprint 1 - Updated"
+              capacity: 45
+      responses:
+        '200':
+          description: Sprint updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '400':
+          $ref: '#/components/responses/BadRequestError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    delete:
+      tags:
+        - Sprints
+      summary: Delete sprint
+      description: |
+        Deletes a sprint and removes sprint association from all stories.
+        Stories are moved back to the product backlog (sprintId set to null).
+      operationId: deleteSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '200':
+          description: Sprint deleted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sprints/{id}/start:
+    post:
+      tags:
+        - Sprints
+      summary: Start sprint
+      description: |
+        Transitions a sprint from PLANNING to ACTIVE status.
+        Only one sprint can be active per project at a time.
+      operationId: startSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '201':
+          description: Sprint started successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '400':
+          description: Sprint is not in PLANNING status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 400
+                message: "Only sprints in PLANNING status can be started"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+        '409':
+          description: Another sprint is already active in this project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 409
+                message: "Cannot start sprint: Another sprint is already active in this project"
+
+  /sprints/{id}/complete:
+    post:
+      tags:
+        - Sprints
+      summary: Complete sprint
+      description: |
+        Transitions a sprint from ACTIVE to COMPLETED status.
+        Automatically:
+        - Calculates velocity based on completed story points
+        - Moves incomplete stories back to backlog
+      operationId: completeSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '201':
+          description: Sprint completed successfully with calculated velocity
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+              example:
+                id: "sprint-uuid-123"
+                name: "Sprint 1"
+                status: "COMPLETED"
+                velocity: 35
+                stories: []
+        '400':
+          description: Sprint is not in ACTIVE status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 400
+                message: "Only active sprints can be completed"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sprints/{id}/stories:
+    post:
+      tags:
+        - Stories
+      summary: Add stories to sprint
+      description: |
+        Adds multiple user stories to a sprint.
+        All stories must exist and belong to the same project as the sprint.
+      operationId: addStoriesToSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddStoriesDto'
+            example:
+              storyIds:
+                - "story-uuid-1"
+                - "story-uuid-2"
+                - "story-uuid-3"
+      responses:
+        '201':
+          description: Stories added successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '400':
+          description: Stories belong to different project
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 400
+                message: "All stories must belong to the same project as the sprint"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          description: Sprint or one or more stories not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 404
+                message: "One or more stories not found"
+
+  /sprints/{id}/stories/{storyId}:
+    delete:
+      tags:
+        - Stories
+      summary: Remove story from sprint
+      description: |
+        Removes a story from a sprint (moves back to backlog).
+        Story is not deleted, only its sprint association is removed.
+      operationId: removeStoryFromSprint
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+        - name: storyId
+          in: path
+          required: true
+          description: UUID of the story to remove
+          schema:
+            type: string
+            format: uuid
+          example: "story-uuid-456"
+      responses:
+        '200':
+          description: Story removed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Sprint'
+        '400':
+          description: Story does not belong to this sprint
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+              example:
+                statusCode: 400
+                message: "Story does not belong to this sprint"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sprints/{id}/metrics:
+    get:
+      tags:
+        - Metrics
+      summary: Get sprint metrics
+      description: |
+        Retrieves comprehensive sprint metrics including:
+        - Story point totals and completion percentage
+        - Story counts by status
+        - Velocity (for completed sprints)
+        - Burndown chart data
+      operationId: getSprintMetrics
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '200':
+          description: Sprint metrics retrieved successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SprintMetrics'
+              example:
+                totalStoryPoints: 48
+                completedStoryPoints: 35
+                remainingStoryPoints: 13
+                completionPercentage: 72.92
+                storiesCount:
+                  total: 8
+                  todo: 1
+                  inProgress: 2
+                  done: 4
+                  blocked: 1
+                velocity: 35
+                burndownData:
+                  - date: "2025-01-01"
+                    remainingPoints: 48
+                    idealRemaining: 48
+                  - date: "2025-01-14"
+                    remainingPoints: 48
+                    idealRemaining: 0
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /sprints/{id}/comments:
+    get:
+      tags:
+        - Comments
+      summary: Get sprint comments
+      description: |
+        Retrieves all comments for a sprint.
+        Comments are ordered by creation date (newest first).
+      operationId: getSprintComments
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      responses:
+        '200':
+          description: Comments retrieved successfully
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/SprintComment'
+              example:
+                - id: "comment-uuid-1"
+                  content: "Sprint review scheduled for Friday"
+                  type: "GENERAL"
+                  createdAt: "2025-01-05T10:00:00.000Z"
+                  author:
+                    id: "user-uuid"
+                    email: "pm@example.com"
+                    fullName: "Jane PM"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+    post:
+      tags:
+        - Comments
+      summary: Add comment to sprint
+      description: |
+        Adds a new comment to a sprint.
+        Author ID is automatically extracted from JWT token.
+      operationId: addSprintComment
+      parameters:
+        - $ref: '#/components/parameters/SprintId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateSprintCommentDto'
+            example:
+              content: "Great progress today! Let's maintain this velocity."
+              type: "GENERAL"
+      responses:
+        '201':
+          description: Comment created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SprintComment'
+              example:
+                id: "comment-uuid"
+                content: "Great progress today! Let's maintain this velocity."
+                type: "GENERAL"
+                sprintId: "sprint-uuid"
+                authorId: "user-uuid"
+                createdAt: "2025-01-05T14:30:00.000Z"
+                author:
+                  id: "user-uuid"
+                  email: "pm@example.com"
+                  fullName: "Jane PM"
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        JWT authentication token obtained from the login endpoint.
+        Include in all requests using the Authorization header.
+
+  parameters:
+    SprintId:
+      name: id
+      in: path
+      required: true
+      description: Unique identifier (UUID) of the sprint
+      schema:
+        type: string
+        format: uuid
+      example: "123e4567-e89b-12d3-a456-426614174000"
+
+  schemas:
+    Sprint:
+      type: object
+      required:
+        - id
+        - name
+        - startDate
+        - endDate
+        - status
+        - projectId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the sprint
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        name:
+          type: string
+          description: Sprint name
+          example: "Sprint 1"
+        goal:
+          type: string
+          nullable: true
+          description: Sprint goal or objective
+          example: "Implement user authentication and profile management"
+        startDate:
+          type: string
+          format: date-time
+          description: Sprint start date and time
+          example: "2025-01-01T00:00:00.000Z"
+        endDate:
+          type: string
+          format: date-time
+          description: Sprint end date and time
+          example: "2025-01-14T23:59:59.999Z"
+        capacity:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Team capacity in story points
+          example: 40
+        velocity:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Actual velocity (sum of completed story points), set when sprint is completed
+          example: 35
+        status:
+          $ref: '#/components/schemas/SprintStatus'
+        projectId:
+          type: string
+          format: uuid
+          description: UUID of the parent project
+          example: "project-uuid-123"
+        createdAt:
+          type: string
+          format: date-time
+          description: Sprint creation timestamp
+          example: "2025-10-24T12:00:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-10-24T14:30:00.000Z"
+        project:
+          $ref: '#/components/schemas/Project'
+        stories:
+          type: array
+          items:
+            $ref: '#/components/schemas/Story'
+          description: List of stories assigned to this sprint
+        comments:
+          type: array
+          items:
+            $ref: '#/components/schemas/SprintComment'
+          description: List of comments on this sprint
+        retrospectives:
+          type: array
+          items:
+            type: object
+          description: List of retrospectives for this sprint
+
+    CreateSprintDto:
+      type: object
+      required:
+        - name
+        - startDate
+        - endDate
+        - projectId
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Sprint name
+          example: "Sprint 1"
+        goal:
+          type: string
+          description: Sprint goal or objective
+          example: "Implement user authentication and profile management"
+        startDate:
+          type: string
+          format: date-time
+          description: Sprint start date (ISO 8601 format)
+          example: "2025-01-01T00:00:00.000Z"
+        endDate:
+          type: string
+          format: date-time
+          description: Sprint end date (ISO 8601 format, must be after startDate)
+          example: "2025-01-14T23:59:59.999Z"
+        capacity:
+          type: integer
+          minimum: 0
+          description: Team capacity in story points
+          example: 40
+        projectId:
+          type: string
+          format: uuid
+          description: UUID of the parent project
+          example: "123e4567-e89b-12d3-a456-426614174000"
+
+    UpdateSprintDto:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          description: Sprint name
+          example: "Sprint 1 - Updated"
+        goal:
+          type: string
+          description: Sprint goal or objective
+          example: "Updated sprint goal"
+        startDate:
+          type: string
+          format: date-time
+          description: Sprint start date (ISO 8601 format)
+          example: "2025-01-02T00:00:00.000Z"
+        endDate:
+          type: string
+          format: date-time
+          description: Sprint end date (ISO 8601 format)
+          example: "2025-01-16T23:59:59.999Z"
+        capacity:
+          type: integer
+          minimum: 0
+          description: Team capacity in story points
+          example: 45
+        status:
+          $ref: '#/components/schemas/SprintStatus'
+
+    AddStoriesDto:
+      type: object
+      required:
+        - storyIds
+      properties:
+        storyIds:
+          type: array
+          minItems: 1
+          items:
+            type: string
+            format: uuid
+          description: Array of story UUIDs to add to the sprint
+          example:
+            - "story-uuid-1"
+            - "story-uuid-2"
+            - "story-uuid-3"
+
+    CreateSprintCommentDto:
+      type: object
+      required:
+        - content
+      properties:
+        content:
+          type: string
+          minLength: 1
+          description: Comment text content
+          example: "Great progress today! Let's maintain this velocity."
+        type:
+          $ref: '#/components/schemas/CommentType'
+
+    SprintComment:
+      type: object
+      required:
+        - id
+        - content
+        - type
+        - sprintId
+        - authorId
+        - createdAt
+        - updatedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the comment
+          example: "comment-uuid-123"
+        content:
+          type: string
+          description: Comment text content
+          example: "Great progress today! Let's maintain this velocity."
+        type:
+          $ref: '#/components/schemas/CommentType'
+        sprintId:
+          type: string
+          format: uuid
+          description: UUID of the related sprint
+          example: "sprint-uuid-123"
+        authorId:
+          type: string
+          format: uuid
+          description: UUID of the comment author
+          example: "user-uuid-123"
+        createdAt:
+          type: string
+          format: date-time
+          description: Comment creation timestamp
+          example: "2025-01-05T14:30:00.000Z"
+        updatedAt:
+          type: string
+          format: date-time
+          description: Last update timestamp
+          example: "2025-01-05T14:30:00.000Z"
+        author:
+          $ref: '#/components/schemas/User'
+        sprint:
+          type: object
+          description: Related sprint object (minimal)
+
+    SprintMetrics:
+      type: object
+      required:
+        - totalStoryPoints
+        - completedStoryPoints
+        - remainingStoryPoints
+        - completionPercentage
+        - storiesCount
+        - burndownData
+      properties:
+        totalStoryPoints:
+          type: integer
+          minimum: 0
+          description: Sum of all story points in the sprint
+          example: 48
+        completedStoryPoints:
+          type: integer
+          minimum: 0
+          description: Sum of story points with DONE status
+          example: 35
+        remainingStoryPoints:
+          type: integer
+          minimum: 0
+          description: Total story points minus completed story points
+          example: 13
+        completionPercentage:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 100
+          description: Percentage of story points completed (rounded to 2 decimals)
+          example: 72.92
+        storiesCount:
+          type: object
+          required:
+            - total
+            - todo
+            - inProgress
+            - done
+            - blocked
+          properties:
+            total:
+              type: integer
+              minimum: 0
+              description: Total number of stories
+              example: 8
+            todo:
+              type: integer
+              minimum: 0
+              description: Number of stories in TODO status
+              example: 1
+            inProgress:
+              type: integer
+              minimum: 0
+              description: Number of stories in IN_PROGRESS status
+              example: 2
+            done:
+              type: integer
+              minimum: 0
+              description: Number of stories in DONE status
+              example: 4
+            blocked:
+              type: integer
+              minimum: 0
+              description: Number of stories in BLOCKED status
+              example: 1
+        velocity:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Actual velocity (only present for completed sprints)
+          example: 35
+        burndownData:
+          type: array
+          items:
+            $ref: '#/components/schemas/BurndownDataPoint'
+          description: Daily burndown chart data points
+
+    BurndownDataPoint:
+      type: object
+      required:
+        - date
+        - remainingPoints
+        - idealRemaining
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date in YYYY-MM-DD format
+          example: "2025-01-01"
+        remainingPoints:
+          type: integer
+          minimum: 0
+          description: Actual remaining story points (currently static)
+          example: 48
+        idealRemaining:
+          type: integer
+          minimum: 0
+          description: Ideal remaining story points following linear burndown
+          example: 44
+
+    Story:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the story
+          example: "story-uuid-123"
+        title:
+          type: string
+          description: Story title
+          example: "User registration"
+        description:
+          type: string
+          nullable: true
+          description: Story description
+          example: "As a user, I want to register for an account"
+        storyPoints:
+          type: integer
+          nullable: true
+          minimum: 0
+          description: Story point estimate
+          example: 8
+        status:
+          $ref: '#/components/schemas/StoryStatus'
+        priority:
+          $ref: '#/components/schemas/Priority'
+        rank:
+          type: integer
+          description: Display order
+          example: 1
+        sprintId:
+          type: string
+          format: uuid
+          nullable: true
+          description: UUID of assigned sprint (null if in backlog)
+          example: "sprint-uuid-123"
+        projectId:
+          type: string
+          format: uuid
+          description: UUID of parent project
+          example: "project-uuid-123"
+        assignee:
+          $ref: '#/components/schemas/User'
+        creator:
+          $ref: '#/components/schemas/User'
+        tasks:
+          type: array
+          items:
+            type: object
+          description: Related tasks
+        comments:
+          type: array
+          items:
+            type: object
+          description: Related comments
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the project
+          example: "project-uuid-123"
+        name:
+          type: string
+          description: Project name
+          example: "Authentication System"
+        key:
+          type: string
+          description: Project key (short identifier)
+          example: "AUTH"
+        description:
+          type: string
+          nullable: true
+          description: Project description
+          example: "User authentication project"
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the user
+          example: "user-uuid-123"
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: "dev@example.com"
+        fullName:
+          type: string
+          nullable: true
+          description: User full name
+          example: "John Developer"
+
+    SprintStatus:
+      type: string
+      enum:
+        - PLANNING
+        - ACTIVE
+        - COMPLETED
+      description: |
+        Sprint lifecycle status:
+        - PLANNING: Initial state, sprint not yet started
+        - ACTIVE: Sprint is currently running
+        - COMPLETED: Sprint has finished
+      example: "ACTIVE"
+
+    StoryStatus:
+      type: string
+      enum:
+        - TODO
+        - IN_PROGRESS
+        - DONE
+        - BLOCKED
+      description: User story status
+      example: "IN_PROGRESS"
+
+    Priority:
+      type: string
+      enum:
+        - LOW
+        - MEDIUM
+        - HIGH
+        - CRITICAL
+      description: Priority level
+      example: "HIGH"
+
+    CommentType:
+      type: string
+      enum:
+        - GENERAL
+        - IMPEDIMENT
+        - DECISION
+        - QUESTION
+        - ANSWER
+        - ACTION_ITEM
+      description: |
+        Comment type for categorization:
+        - GENERAL: General discussion (default)
+        - IMPEDIMENT: Blocked or impediment
+        - DECISION: Decision made
+        - QUESTION: Question or clarification needed
+        - ANSWER: Answer to a question
+        - ACTION_ITEM: Action item or task
+      example: "GENERAL"
+
+    Error:
+      type: object
+      required:
+        - statusCode
+        - message
+      properties:
+        statusCode:
+          type: integer
+          description: HTTP status code
+          example: 400
+        message:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+          description: Error message or array of validation errors
+          example: "End date must be after start date"
+        error:
+          type: string
+          description: Error type/category
+          example: "Bad Request"
+
+  responses:
+    UnauthorizedError:
+      description: Authentication required or invalid token
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 401
+            message: "Unauthorized"
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 404
+            message: "Sprint with ID sprint-uuid-123 not found"
+
+    BadRequestError:
+      description: Invalid request data or validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          examples:
+            validationError:
+              value:
+                statusCode: 400
+                message:
+                  - "name should not be empty"
+                  - "startDate must be a valid ISO 8601 date string"
+                error: "Bad Request"
+            dateRangeError:
+              value:
+                statusCode: 400
+                message: "End date must be after start date"
+
+    ConflictError:
+      description: Resource conflict
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            statusCode: 409
+            message: "Sprint dates overlap with existing active or planning sprint"
