@@ -132,6 +132,14 @@ async function handleResponse<T>(response: Response): Promise<T> {
   }
 }
 
+function getAuthHeaders(): HeadersInit {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('accessToken') : null
+  return {
+    'Content-Type': 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {})
+  }
+}
+
 async function makeRequest<T>(
   url: string,
   options: RequestInit = {},
@@ -144,7 +152,7 @@ async function makeRequest<T>(
       response = await fetch(url, {
         ...options,
         headers: {
-          'Content-Type': 'application/json',
+          ...getAuthHeaders(),
           ...options.headers
         }
       });
@@ -168,59 +176,59 @@ export const storiesApi = {
     if (projectId) params.append('projectId', projectId);
     if (sprintId) params.append('sprintId', sprintId);
 
-    const url = `${API_URL}/stories${params.toString() ? `?${params.toString()}` : ''}`;
+    const url = `${API_URL}/api/v1/stories${params.toString() ? `?${params.toString()}` : ''}`;
     return makeRequest<Story[]>(url, { method: 'GET' });
   },
 
   async getById(id: string): Promise<Story> {
-    return makeRequest<Story>(`${API_URL}/stories/${id}`, { method: 'GET' });
+    return makeRequest<Story>(`${API_URL}/api/v1/stories/${id}`, { method: 'GET' });
   },
 
   async getByStatus(status: Story['status'], projectId?: string): Promise<Story[]> {
     const params = new URLSearchParams();
     if (projectId) params.append('projectId', projectId);
 
-    const url = `${API_URL}/stories/by-status/${status}${params.toString() ? `?${params.toString()}` : ''}`;
+    const url = `${API_URL}/api/v1/stories/by-status/${status}${params.toString() ? `?${params.toString()}` : ''}`;
     return makeRequest<Story[]>(url, { method: 'GET' });
   },
 
   async create(story: { title: string; description?: string; storyPoints?: number; status: StoryStatus; assigneeId?: string }): Promise<Story> {
-    return makeRequest<Story>(`${API_URL}/stories`, {
+    return makeRequest<Story>(`${API_URL}/api/v1/stories`, {
       method: 'POST',
       body: JSON.stringify(story),
     }, { maxRetries: 2 }); // Fewer retries for create operations
   },
 
   async update(id: string, updates: { title?: string; description?: string; storyPoints?: number; assigneeId?: string }): Promise<Story> {
-    return makeRequest<Story>(`${API_URL}/stories/${id}`, {
+    return makeRequest<Story>(`${API_URL}/api/v1/stories/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(updates),
     }, { maxRetries: 2 }); // Fewer retries for update operations
   },
 
   async updateStatus(id: string, status: StoryStatus): Promise<Story> {
-    return makeRequest<Story>(`${API_URL}/stories/${id}/status`, {
+    return makeRequest<Story>(`${API_URL}/api/v1/stories/${id}/status`, {
       method: 'PUT',
       body: JSON.stringify({ status }),
     }, { maxRetries: 1 }); // Minimal retries for status updates to avoid conflicts
   },
 
   async moveToSprint(id: string, sprintId: string | null): Promise<Story> {
-    return makeRequest<Story>(`${API_URL}/stories/${id}/move-to-sprint`, {
+    return makeRequest<Story>(`${API_URL}/api/v1/stories/${id}/move-to-sprint`, {
       method: 'PUT',
       body: JSON.stringify({ sprintId }),
     });
   },
 
   async reorder(storyIds: string[]): Promise<Story[]> {
-    return makeRequest<Story[]>(`${API_URL}/stories/reorder`, {
+    return makeRequest<Story[]>(`${API_URL}/api/v1/stories/reorder`, {
       method: 'PUT',
       body: JSON.stringify({ storyIds }),
     }, { maxRetries: 1 }); // Minimal retries for reorder to avoid conflicts
   },
 
   async delete(id: string): Promise<void> {
-    return makeRequest<void>(`${API_URL}/stories/${id}`, {
+    return makeRequest<void>(`${API_URL}/api/v1/stories/${id}`, {
       method: 'DELETE',
     }, { maxRetries: 2 });
   },

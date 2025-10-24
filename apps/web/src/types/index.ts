@@ -60,3 +60,41 @@ export interface Column {
   status: StoryStatus;
   stories: Story[];
 }
+
+export type SprintStatus = 'PLANNING' | 'ACTIVE' | 'COMPLETED';
+
+export interface Sprint {
+  id: string;
+  name: string;
+  goal?: string;
+  startDate: string | Date;
+  endDate: string | Date;
+  status: SprintStatus;
+  capacity?: number;
+  projectId: string;
+  createdAt: string | Date;
+  updatedAt: string | Date;
+  stories?: Story[];
+}
+
+export interface SprintMetrics {
+  totalStoryPoints: number;
+  completedStoryPoints: number;
+  remainingStoryPoints: number;
+  completionPercentage: number;
+  storiesCount: {
+    total: number;
+    todo: number;
+    inProgress: number;
+    done: number;
+    blocked: number;
+  };
+  velocity?: number;
+  burndownData: BurndownDataPoint[];
+}
+
+export interface BurndownDataPoint {
+  date: string;
+  remainingPoints: number;
+  idealRemaining: number;
+}
