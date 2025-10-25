@@ -5,6 +5,7 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { PrismaModule } from './prisma/prisma.module'
 import { StoriesModule } from './stories/stories.module'
+import { StoryCommentsModule } from './story-comments/story-comments.module'
 import { AuthModule } from './auth/auth.module'
 import { UsersModule } from './users/users.module'
 import { TeamsModule } from './teams/teams.module'
@@ -25,6 +26,7 @@ import { GlobalExceptionFilter } from './common/filters/global-exception.filter'
     PrismaModule,
     AuthModule,
     StoriesModule,
+    StoryCommentsModule,
     UsersModule,
     TeamsModule,
     ProjectsModule,

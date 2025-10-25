@@ -22,6 +22,52 @@ export class StoriesService {
     const defaultProjectId = 'default-project'
     const defaultCreatorId = 'default-user'
 
+    // Ensure default user exists
+    let defaultUser = await this.prisma.user.findUnique({
+      where: { id: defaultCreatorId },
+    })
+    if (!defaultUser) {
+      defaultUser = await this.prisma.user.create({
+        data: {
+          id: defaultCreatorId,
+          email: 'default@example.com',
+          name: 'Default User',
+          password: 'not-used',
+        },
+      })
+    }
+
+    // Ensure default team exists (needed for project)
+    const defaultTeamId = 'default-team'
+    let defaultTeam = await this.prisma.team.findUnique({
+      where: { id: defaultTeamId },
+    })
+    if (!defaultTeam) {
+      defaultTeam = await this.prisma.team.create({
+        data: {
+          id: defaultTeamId,
+          name: 'Default Team',
+          description: 'Default team for testing',
+          creatorId: defaultCreatorId,
+        },
+      })
+    }
+
+    // Ensure default project exists
+    let defaultProject = await this.prisma.project.findUnique({
+      where: { id: defaultProjectId },
+    })
+    if (!defaultProject) {
+      defaultProject = await this.prisma.project.create({
+        data: {
+          id: defaultProjectId,
+          name: 'Default Project',
+          description: 'Default project for testing',
+          teamId: defaultTeamId,
+        },
+      })
+    }
+
     return this.prisma.story.create({
       data: {
         title: createStoryDto.title,
