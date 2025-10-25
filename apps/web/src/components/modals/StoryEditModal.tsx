@@ -183,22 +183,21 @@ export function StoryEditModal({
 
   return (
     <ModalPortal>
-      <div
-        className="fixed inset-0 z-50 flex items-center justify-center"
-        onClick={e => {
-          if (!ready || isSaving) return
-          if (e.target === e.currentTarget) {
-            handleClose()
-          }
-        }}
-      >
+      <div className="fixed inset-0 z-50 flex items-center justify-center pointer-events-none">
         {/* Backdrop */}
-        <div className="absolute inset-0 bg-slate-800/60 backdrop-blur-sm" />
-        
+        <div
+          className="absolute inset-0 bg-black/60 dark:bg-black/80 backdrop-blur-sm pointer-events-auto"
+          onClick={() => {
+            if (!isSaving && ready) {
+              handleClose()
+            }
+          }}
+        />
+
         {/* Modal Content */}
-        <div className="relative z-10 w-full max-w-2xl mx-4">
+        <div className="relative z-10 w-full max-w-2xl mx-4 pointer-events-auto">
           <div
-            className="bg-white rounded-2xl shadow-2xl border border-slate-200 max-h-[90vh] overflow-y-auto"
+            className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl border border-gray-200 dark:border-gray-700 max-h-[90vh] overflow-y-auto"
             onClick={e => e.stopPropagation()}
             role="dialog"
             aria-modal="true"
@@ -207,19 +206,19 @@ export function StoryEditModal({
             data-testid="story-modal"
           >
             {/* Header */}
-            <div className="flex items-center justify-between p-6 border-b border-slate-200">
+            <div className="flex items-center justify-between p-6 border-b border-gray-200 dark:border-gray-700">
               <div>
-                <h2 id="story-modal-title" className="text-2xl font-bold text-slate-900">
+                <h2 id="story-modal-title" className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                   {story?.id.startsWith('draft-') ? 'Create Story' : 'Edit Story'}
                 </h2>
                 {hasUnsavedChanges && (
-                  <p className="text-sm text-amber-600 mt-1">You have unsaved changes</p>
+                  <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">You have unsaved changes</p>
                 )}
               </div>
               <button
                 onClick={handleClose}
                 disabled={isSaving}
-                className="text-slate-500 hover:text-slate-700 transition-colors p-2 hover:bg-slate-100 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
+                className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 transition-colors p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed"
                 aria-label="Close modal"
               >
                 <X className="w-6 h-6" />
@@ -230,14 +229,14 @@ export function StoryEditModal({
             <form id="story-modal-description" onSubmit={handleSubmit} className="p-6 space-y-6">
               {/* Error Message with Retry */}
               {lastError && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg" data-testid="save-error-message">
+                <div className="p-4 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg" data-testid="save-error-message">
                   <div className="flex items-start gap-3">
-                    <svg className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-sm font-medium text-red-800">Save Failed</h3>
-                      <p className="text-sm text-red-700 mt-1">
+                      <h3 className="text-sm font-medium text-red-800 dark:text-red-300">Save Failed</h3>
+                      <p className="text-sm text-red-700 dark:text-red-400 mt-1">
                         {lastError instanceof ApiError
                           ? lastError.getUserFriendlyMessage()
                           : lastError.message || 'An unexpected error occurred'}
@@ -246,7 +245,7 @@ export function StoryEditModal({
                         <button
                           onClick={handleRetry}
                           disabled={isSaving}
-                          className="mt-3 text-sm font-medium text-red-800 underline hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="mt-3 text-sm font-medium text-red-800 dark:text-red-300 underline hover:no-underline disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {isSaving ? 'Retrying...' : 'Try Again'}
                         </button>
@@ -257,7 +256,7 @@ export function StoryEditModal({
               )}
               {/* Title */}
               <div>
-                <label htmlFor="title" className="block text-sm font-semibold text-slate-800 mb-2">
+                <label htmlFor="title" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Story Title *
                 </label>
                 <input
@@ -265,7 +264,7 @@ export function StoryEditModal({
                   type="text"
                   value={currentTitle || ''}
                   onChange={e => handleInputChange('title', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-slate-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
                   placeholder="As a user, I want to..."
                   required
                 />
@@ -273,7 +272,7 @@ export function StoryEditModal({
 
               {/* Description */}
               <div>
-                <label htmlFor="description" className="block text-sm font-semibold text-slate-800 mb-2">
+                <label htmlFor="description" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Description *
                 </label>
                 <textarea
@@ -281,7 +280,7 @@ export function StoryEditModal({
                   rows={4}
                   value={currentDescription || ''}
                   onChange={e => handleInputChange('description', e.target.value)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-slate-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
                   placeholder="Describe the user story in detail..."
                   required
                 />
@@ -290,14 +289,14 @@ export function StoryEditModal({
               {/* Points + Assignee */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <label htmlFor="storyPoints" className="block text-sm font-semibold text-slate-800 mb-2">
+                  <label htmlFor="storyPoints" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Story Points
                   </label>
                   <select
                     id="storyPoints"
                     value={String(formData.storyPoints ?? story?.storyPoints ?? 1)}
                     onChange={e => handleInputChange('storyPoints', parseInt(e.target.value))}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
                   >
                     <option value="1">1 point</option>
                     <option value="2">2 points</option>
@@ -309,7 +308,7 @@ export function StoryEditModal({
                   </select>
                 </div>
                 <div>
-                  <label htmlFor="assigneeId" className="block text-sm font-semibold text-slate-800 mb-2">
+                  <label htmlFor="assigneeId" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                     Assignee
                   </label>
                   <input
@@ -317,7 +316,7 @@ export function StoryEditModal({
                     type="text"
                     value={formData.assigneeId || ''}
                     onChange={e => handleInputChange('assigneeId', e.target.value)}
-                    className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
                     placeholder="Enter assignee name..."
                   />
                 </div>
@@ -325,14 +324,14 @@ export function StoryEditModal({
 
               {/* Status */}
               <div>
-                <label htmlFor="status" className="block text-sm font-semibold text-slate-800 mb-2">
+                <label htmlFor="status" className="block text-sm font-semibold text-gray-800 dark:text-gray-200 mb-2">
                   Status
                 </label>
                 <select
                   id="status"
                   value={formData.status || story?.status || 'TODO'}
                   onChange={e => handleInputChange('status', e.target.value as StoryStatus)}
-                  className="w-full px-4 py-3 border border-slate-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-slate-900 bg-white"
+                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-gray-100 bg-white dark:bg-gray-700"
                 >
                   <option value="TODO">To Do</option>
                   <option value="IN_PROGRESS">In Progress</option>
@@ -341,13 +340,12 @@ export function StoryEditModal({
               </div>
 
               {/* Actions */}
-              {/* Actions */}
-              <div className="flex justify-end space-x-4 pt-6 border-t border-slate-200">
+              <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200 dark:border-gray-700">
                 <button
                   type="button"
                   onClick={handleClose}
                   disabled={isSaving}
-                  className="px-6 py-3 text-sm font-medium text-slate-700 bg-white border border-slate-300 rounded-lg hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="px-6 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -357,8 +355,8 @@ export function StoryEditModal({
                   data-testid="save-button"
                   className={`px-6 py-3 text-sm font-medium border border-transparent rounded-lg focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors flex items-center gap-2 ${
                     isValidForSave && !isSaving
-                      ? 'text-white bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                      : 'text-gray-400 bg-gray-200 cursor-not-allowed'
+                      ? 'text-white bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 focus:ring-blue-500'
+                      : 'text-gray-400 dark:text-gray-500 bg-gray-200 dark:bg-gray-700 cursor-not-allowed'
                   }`}
                 >
                   {isSaving && (
