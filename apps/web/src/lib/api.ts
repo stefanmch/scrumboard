@@ -192,10 +192,15 @@ export const storiesApi = {
     return makeRequest<Story[]>(url, { method: 'GET' });
   },
 
-  async create(story: { title: string; description?: string; storyPoints?: number; status: StoryStatus; assigneeId?: string }): Promise<Story> {
+  async create(story: { title: string; description?: string; storyPoints?: number; status: StoryStatus; assigneeId?: string; projectId?: string }): Promise<Story> {
+    // Add default projectId if not provided
+    const storyData = {
+      ...story,
+      projectId: story.projectId || 'default-project'
+    };
     return makeRequest<Story>(`${API_URL}/api/v1/stories`, {
       method: 'POST',
-      body: JSON.stringify(story),
+      body: JSON.stringify(storyData),
     }, { maxRetries: 2 }); // Fewer retries for create operations
   },
 
