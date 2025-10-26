@@ -72,6 +72,7 @@ export interface BacklogResponse {
 export const enhancedStoriesApi = {
   /**
    * Get stories with advanced filtering and sorting
+   * @param projectId - Project ID for filtering stories (required for project-scoped queries)
    */
   async getBacklog(projectId: string, params?: BacklogQueryParams): Promise<Story[]> {
     const queryParams = new URLSearchParams({ projectId })

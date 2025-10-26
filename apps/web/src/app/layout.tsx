@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { ToastProvider } from "@/components/ui/Toast";
 import { ErrorBoundary } from "@/components/error/ErrorBoundary";
 import { AppLayout } from "@/components/layout/AppLayout";
+import { ProjectProvider } from "@/contexts/ProjectContext";
 import "./globals.css";
 import "@/styles/navigation.css";
 import "@/styles/pages.css";
@@ -34,9 +35,11 @@ export default function RootLayout({
       >
         <ErrorBoundary>
           <ToastProvider>
-            <AppLayout>
-              {children}
-            </AppLayout>
+            <ProjectProvider>
+              <AppLayout>
+                {children}
+              </AppLayout>
+            </ProjectProvider>
           </ToastProvider>
         </ErrorBoundary>
       </body>

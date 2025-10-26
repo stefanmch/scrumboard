@@ -171,6 +171,11 @@ async function makeRequest<T>(
 }
 
 export const storiesApi = {
+  /**
+   * Get all stories with optional filtering by project and sprint
+   * @param projectId - Optional project ID for filtering (recommended for project-scoped queries)
+   * @param sprintId - Optional sprint ID for filtering
+   */
   async getAll(projectId?: string, sprintId?: string): Promise<Story[]> {
     const params = new URLSearchParams();
     if (projectId) params.append('projectId', projectId);
@@ -178,6 +183,14 @@ export const storiesApi = {
 
     const url = `${API_URL}/api/v1/stories${params.toString() ? `?${params.toString()}` : ''}`;
     return makeRequest<Story[]>(url, { method: 'GET' });
+  },
+
+  /**
+   * Get all stories for a specific project
+   * @param projectId - Project ID to filter stories by
+   */
+  async getAllForProject(projectId: string): Promise<Story[]> {
+    return this.getAll(projectId);
   },
 
   async getById(id: string): Promise<Story> {

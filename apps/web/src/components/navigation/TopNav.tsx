@@ -1,8 +1,10 @@
 'use client'
 
-import { Search, Bell, ChevronDown, Menu } from 'lucide-react'
+import { Search, Bell, ChevronDown, Menu, FolderOpen } from 'lucide-react'
 import { useState, useEffect } from 'react'
 import { UserMenu } from './UserMenu'
+import { useProject } from '@/contexts/ProjectContext'
+import { useRouter } from 'next/navigation'
 
 interface User {
   name: string
@@ -12,6 +14,8 @@ interface User {
 }
 
 export function TopNav() {
+  const router = useRouter()
+  const { selectedProject } = useProject()
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
   const [user, setUser] = useState<User | undefined>(undefined)
 
@@ -50,6 +54,10 @@ export function TopNav() {
     }
   }, [])
 
+  const handleProjectClick = () => {
+    router.push('/projects')
+  }
+
   return (
     <header className="top-nav">
       <div className="top-nav-container">
@@ -81,13 +89,20 @@ export function TopNav() {
           </div>
         </div>
 
-        {/* Right Section - Sprint selector, Notifications, User */}
+        {/* Right Section - Project selector, Notifications, User */}
         <div className="top-nav-right">
-          {/* Sprint Selector (hidden on mobile) */}
-          <div className="sprint-selector hidden lg:flex">
-            <span className="sprint-label">Sprint 23</span>
+          {/* Project Selector (hidden on mobile) */}
+          <button
+            onClick={handleProjectClick}
+            className="sprint-selector hidden lg:flex items-center gap-2 cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+            aria-label="Select project"
+          >
+            <FolderOpen className="w-4 h-4" />
+            <span className="sprint-label">
+              {selectedProject ? selectedProject.name : 'Select Project'}
+            </span>
             <ChevronDown className="w-4 h-4" />
-          </div>
+          </button>
 
           {/* Notifications */}
           <button className="notification-btn" aria-label="Notifications">

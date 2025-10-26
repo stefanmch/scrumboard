@@ -84,6 +84,10 @@ async function makeRequest<T>(
 }
 
 export const sprintsApi = {
+  /**
+   * Get all sprints with optional filtering
+   * @param filters - Optional filters including projectId for project-scoped queries
+   */
   async getAll(filters?: SprintFilters): Promise<Sprint[]> {
     const params = new URLSearchParams();
     if (filters?.projectId) params.append('projectId', filters.projectId);
@@ -91,6 +95,14 @@ export const sprintsApi = {
 
     const url = `${API_URL}/api/v1/sprints${params.toString() ? `?${params.toString()}` : ''}`;
     return makeRequest<Sprint[]>(url, { method: 'GET' });
+  },
+
+  /**
+   * Get all sprints for a specific project
+   * @param projectId - Project ID to filter sprints by
+   */
+  async getAllForProject(projectId: string): Promise<Sprint[]> {
+    return this.getAll({ projectId });
   },
 
   async getById(id: string): Promise<Sprint> {

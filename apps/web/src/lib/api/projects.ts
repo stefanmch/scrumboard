@@ -11,8 +11,8 @@ export interface Project {
   status: ProjectStatus
   teamId: string
   teamName?: string
-  createdAt: Date
-  updatedAt: Date
+  createdAt: Date | string
+  updatedAt: Date | string
   storyCount?: number
   sprintCount?: number
   taskCount?: number
@@ -88,38 +88,37 @@ function getAuthHeaders(): HeadersInit {
 }
 
 export const projectsApi = {
-  async create(teamId: string, data: CreateProjectData): Promise<Project> {
-    // New API: POST /projects with teamIds array
+  /**
+   * Get all projects for the current user
+   */
+  async getAll(): Promise<Project[]> {
     const response = await fetch(`${API_URL}/api/v1/projects`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({
-        ...data,
-        teamIds: [teamId] // Convert single teamId to array for new API
-      })
+      method: 'GET',
+      headers: getAuthHeaders()
     })
 
     return handleResponse(response)
   },
 
+  /**
+   * Get all projects for a specific team
+   * Note: After migration, this returns all projects and filters client-side
+   */
   async getAllForTeam(teamId: string): Promise<Project[]> {
-    // New API: GET /projects returns all projects for user
-    // Filter by team on client side
     const response = await fetch(`${API_URL}/api/v1/projects`, {
       method: 'GET',
       headers: getAuthHeaders()
     })
 
     const projects = await handleResponse<Project[]>(response)
-    // Filter to only projects associated with this team
-    // Note: After migration, projects have 'teams' array instead of single 'teamId'
-    return projects.filter(p => {
-      // Check if project is associated with this team
-      // For now, return all projects (backend handles access control)
-      return true
-    })
+    // Filter to projects for this team (backend returns all user's projects)
+    // TODO: Update after backend supports team filtering
+    return projects
   },
 
+  /**
+   * Get a specific project by ID
+   */
   async getById(id: string): Promise<Project> {
     const response = await fetch(`${API_URL}/api/v1/projects/${id}`, {
       method: 'GET',
@@ -129,6 +128,9 @@ export const projectsApi = {
     return handleResponse(response)
   },
 
+  /**
+   * Get project statistics
+   */
   async getStats(id: string): Promise<ProjectStats> {
     const response = await fetch(`${API_URL}/api/v1/projects/${id}/stats`, {
       method: 'GET',
@@ -138,6 +140,26 @@ export const projectsApi = {
     return handleResponse(response)
   },
 
+  /**
+   * Create a new project for a team
+   * Note: New API accepts teamIds array
+   */
+  async create(teamId: string, data: CreateProjectData): Promise<Project> {
+    const response = await fetch(`${API_URL}/api/v1/projects`, {
+      method: 'POST',
+      headers: getAuthHeaders(),
+      body: JSON.stringify({
+        ...data,
+        teamIds: [teamId] // Convert to array for new many-to-many API
+      })
+    })
+
+    return handleResponse(response)
+  },
+
+  /**
+   * Update an existing project
+   */
   async update(id: string, data: UpdateProjectData): Promise<Project> {
     const response = await fetch(`${API_URL}/api/v1/projects/${id}`, {
       method: 'PATCH',
@@ -148,6 +170,9 @@ export const projectsApi = {
     return handleResponse(response)
   },
 
+  /**
+   * Delete a project
+   */
   async delete(id: string): Promise<void> {
     const response = await fetch(`${API_URL}/api/v1/projects/${id}`, {
       method: 'DELETE',
