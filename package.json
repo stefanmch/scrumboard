@@ -37,5 +37,8 @@
     "pnpm": "^8.0.0",
     "prettier": "^3.6.2",
     "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "claude-flow": "^2.7.26"
   }
 }
