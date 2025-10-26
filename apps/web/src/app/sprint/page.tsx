@@ -10,8 +10,10 @@ import { sprintsApi } from '@/lib/api-sprints'
 import { storiesApi } from '@/lib/api'
 import { Sprint, Story, SprintMetrics, BurndownDataPoint, Comment } from '@/types'
 import { MessageSquare, CheckCircle2 } from 'lucide-react'
+import { useProject } from '@/contexts/ProjectContext'
 
 export default function SprintPage() {
+  const { selectedProject } = useProject()
   const [activeSprint, setActiveSprint] = useState<Sprint | null>(null)
   const [sprintStories, setSprintStories] = useState<Story[]>([])
   const [metrics, setMetrics] = useState<SprintMetrics | null>(null)
@@ -24,11 +26,16 @@ export default function SprintPage() {
   const toast = useToast()
 
   const loadSprintData = useCallback(async () => {
+    if (!selectedProject) {
+      setIsLoading(false)
+      return
+    }
+
     try {
       setIsLoading(true)
 
-      // Get active sprints
-      const sprints = await sprintsApi.getAll({ status: 'ACTIVE' })
+      // Get active sprints for the selected project
+      const sprints = await sprintsApi.getAll({ status: 'ACTIVE', projectId: selectedProject.id })
 
       if (sprints.length === 0) {
         setIsLoading(false)
@@ -54,7 +61,7 @@ export default function SprintPage() {
     } finally {
       setIsLoading(false)
     }
-  }, []) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedProject]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadSprintData()
@@ -130,6 +137,26 @@ export default function SprintPage() {
       toast.showError(error as Error, 'Failed to update story')
       throw error
     }
+  }
+
+  if (!selectedProject) {
+    return (
+      <div className="page-container">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Please select a project to view the active sprint
+            </p>
+            <a
+              href="/projects"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block"
+            >
+              Select Project
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {

@@ -36,6 +36,7 @@ import { useToast } from '@/components/ui/Toast'
 import { enhancedStoriesApi, BacklogFilters as BacklogFiltersType } from '@/lib/api/stories'
 import { storiesApi } from '@/lib/api'
 import { Story } from '@/types'
+import { useProject } from '@/contexts/ProjectContext'
 
 interface SortableStoryRowProps {
   story: Story
@@ -178,6 +179,7 @@ function SortableStoryRow({ story, onEdit, onRefine, onComment }: SortableStoryR
 }
 
 export default function BacklogPage() {
+  const { selectedProject } = useProject()
   const [stories, setStories] = useState<Story[]>([])
   const [filters, setFilters] = useState<BacklogFiltersType>({ hasNoSprint: true })
   const [view, setView] = useState<'list' | 'hierarchy'>('list')
@@ -200,11 +202,14 @@ export default function BacklogPage() {
   )
 
   const loadBacklog = useCallback(async () => {
+    if (!selectedProject) {
+      setIsLoading(false)
+      return
+    }
+
     try {
       setIsLoading(true)
-      // Use first project for now - in real app, get from context/route
-      const projectId = 'default-project'
-      const data = await enhancedStoriesApi.getBacklog(projectId, {
+      const data = await enhancedStoriesApi.getBacklog(selectedProject.id, {
         ...filters,
         sortBy,
         sortOrder: 'asc',
@@ -215,7 +220,7 @@ export default function BacklogPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [filters, sortBy]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [selectedProject, filters, sortBy]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     loadBacklog()
@@ -235,8 +240,9 @@ export default function BacklogPage() {
 
     try {
       // Persist to backend
+      if (!selectedProject) return
       await enhancedStoriesApi.reorderBacklog(
-        'default-project',
+        selectedProject.id,
         reorderedStories.map(s => s.id)
       )
     } catch (error) {
@@ -285,6 +291,11 @@ export default function BacklogPage() {
   }
 
   const handleAddStory = () => {
+    if (!selectedProject) {
+      toast.showError('Please select a project first')
+      return
+    }
+
     // Create a draft story object to pass to the modal
     const draftStory: Story = {
       id: `draft-${Date.now()}`,
@@ -295,7 +306,7 @@ export default function BacklogPage() {
       rank: stories.length + 1,
       createdAt: new Date(),
       updatedAt: new Date(),
-      projectId: 'default-project',
+      projectId: selectedProject.id,
       creatorId: 'default-user',
       tags: [],
       priority: 'MEDIUM',
@@ -315,6 +326,26 @@ export default function BacklogPage() {
 
   const clearFilters = () => {
     setFilters({ hasNoSprint: true })
+  }
+
+  if (!selectedProject) {
+    return (
+      <div className="page-container">
+        <div className="flex justify-center items-center h-64">
+          <div className="text-center">
+            <p className="text-gray-600 dark:text-gray-400 mb-4">
+              Please select a project to view the backlog
+            </p>
+            <a
+              href="/projects"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 inline-block"
+            >
+              Select Project
+            </a>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   if (isLoading) {
@@ -373,7 +404,7 @@ export default function BacklogPage() {
           {/* Sort */}
           <select
             value={sortBy}
-            onChange={e => setSortBy(e.target.value as any)}
+            onChange={e => setSortBy(e.target.value as 'rank' | 'priority' | 'businessValue' | 'storyPoints')}
             className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
           >
             <option value="rank">Manual Order</option>
