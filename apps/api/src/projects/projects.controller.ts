@@ -21,7 +21,7 @@ import { SimpleJwtAuthGuard } from '../auth/guards/simple-jwt-auth.guard'
 import { CurrentUser } from '../auth/decorators/current-user.decorator'
 
 @ApiTags('projects')
-@Controller('teams/:teamId/projects')
+@Controller('projects')
 @UseGuards(SimpleJwtAuthGuard)
 @ApiBearerAuth()
 export class ProjectsController {
@@ -29,23 +29,21 @@ export class ProjectsController {
 
   @Post()
   @Throttle({ default: { limit: 10, ttl: 60000 } })
-  @ApiOperation({ summary: 'Create a new project in a team' })
+  @ApiOperation({ summary: 'Create a new project with associated teams' })
   @ApiResponse({ status: 201, description: 'Project created successfully', type: ProjectResponseDto })
-  @ApiResponse({ status: 403, description: 'User is not a member of the team' })
+  @ApiResponse({ status: 403, description: 'User is not a member of one or more teams' })
   async create(
-    @Param('teamId') teamId: string,
     @Body() createProjectDto: CreateProjectDto,
     @CurrentUser() user: any,
   ): Promise<ProjectResponseDto> {
-    return this.projectsService.create(teamId, createProjectDto, user.sub)
+    return this.projectsService.create(createProjectDto, user.sub)
   }
 
   @Get()
-  @ApiOperation({ summary: 'Get all projects for a team' })
+  @ApiOperation({ summary: 'Get all projects for the current user' })
   @ApiResponse({ status: 200, description: 'Projects retrieved successfully', type: [ProjectResponseDto] })
-  @ApiResponse({ status: 403, description: 'User is not a member of the team' })
-  async findAll(@Param('teamId') teamId: string, @CurrentUser() user: any): Promise<ProjectResponseDto[]> {
-    return this.projectsService.findAllForTeam(teamId, user.sub)
+  async findAll(@CurrentUser() user: any): Promise<ProjectResponseDto[]> {
+    return this.projectsService.findAllForUser(user.sub)
   }
 
   @Get(':id')
@@ -86,8 +84,46 @@ export class ProjectsController {
   @ApiOperation({ summary: 'Delete a project (admin only)' })
   @ApiResponse({ status: 204, description: 'Project deleted successfully' })
   @ApiResponse({ status: 404, description: 'Project not found' })
-  @ApiResponse({ status: 403, description: 'User is not a team admin' })
+  @ApiResponse({ status: 403, description: 'User is not a project admin' })
   async remove(@Param('id') id: string, @CurrentUser() user: any): Promise<void> {
     return this.projectsService.remove(id, user.sub)
+  }
+
+  @Post(':id/teams')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Add a team to a project' })
+  @ApiResponse({ status: 200, description: 'Team added to project successfully' })
+  @ApiResponse({ status: 404, description: 'Project or team not found' })
+  @ApiResponse({ status: 403, description: 'User is not authorized' })
+  async addTeam(
+    @Param('id') projectId: string,
+    @Body('teamId') teamId: string,
+    @CurrentUser() user: any,
+  ): Promise<void> {
+    return this.projectsService.addTeam(projectId, teamId, user.sub)
+  }
+
+  @Delete(':id/teams/:teamId')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Remove a team from a project' })
+  @ApiResponse({ status: 204, description: 'Team removed from project successfully' })
+  @ApiResponse({ status: 404, description: 'Project or team not found' })
+  @ApiResponse({ status: 403, description: 'User is not authorized' })
+  async removeTeam(
+    @Param('id') projectId: string,
+    @Param('teamId') teamId: string,
+    @CurrentUser() user: any,
+  ): Promise<void> {
+    return this.projectsService.removeTeam(projectId, teamId, user.sub)
+  }
+
+  @Get(':id/teams')
+  @ApiOperation({ summary: 'Get all teams associated with a project' })
+  @ApiResponse({ status: 200, description: 'Teams retrieved successfully' })
+  @ApiResponse({ status: 404, description: 'Project not found' })
+  @ApiResponse({ status: 403, description: 'User does not have access to this project' })
+  async getTeams(@Param('id') projectId: string, @CurrentUser() user: any) {
+    return this.projectsService.getTeams(projectId, user.sub)
   }
 }

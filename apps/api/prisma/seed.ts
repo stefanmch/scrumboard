@@ -33,7 +33,7 @@ async function main() {
 
   console.log('✅ Default team created');
 
-  // Create default project
+  // Create default project with team association
   const defaultProject = await prisma.project.upsert({
     where: { id: 'default-project' },
     update: {},
@@ -41,11 +41,16 @@ async function main() {
       id: 'default-project',
       name: 'Default Project',
       description: 'Default project for development',
-      teamId: defaultTeam.id,
+      teams: {
+        create: {
+          teamId: defaultTeam.id,
+          role: 'PRIMARY',
+        },
+      },
     },
   });
 
-  console.log('✅ Default project created');
+  console.log('✅ Default project created with team association');
 
   // Create sample stories
   const stories = await Promise.all([

@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsString, IsOptional, MinLength, MaxLength, IsEnum } from 'class-validator'
+import { IsString, IsOptional, MinLength, MaxLength, IsEnum, IsArray, ArrayMinSize } from 'class-validator'
 import { ProjectStatus } from '@prisma/client'
 
 export class CreateProjectDto {
@@ -34,4 +34,15 @@ export class CreateProjectDto {
   @IsOptional()
   @IsEnum(ProjectStatus)
   status?: ProjectStatus
+
+  @ApiProperty({
+    description: 'Array of team IDs to associate with the project (supports multiple teams)',
+    example: ['clh1234567890', 'clh0987654321'],
+    type: [String],
+    isArray: true,
+  })
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1, { message: 'At least one team must be associated with the project' })
+  teamIds: string[]
 }

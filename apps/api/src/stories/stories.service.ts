@@ -63,7 +63,12 @@ export class StoriesService {
           id: defaultProjectId,
           name: 'Default Project',
           description: 'Default project for testing',
-          teamId: defaultTeamId,
+          teams: {
+            create: {
+              teamId: defaultTeamId,
+              role: 'PRIMARY',
+            },
+          },
         },
       })
     }

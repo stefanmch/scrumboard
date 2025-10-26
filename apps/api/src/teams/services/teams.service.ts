@@ -112,7 +112,7 @@ export class TeamsService {
         _count: {
           select: {
             members: true,
-            projects: true,
+            projectMemberships: true,
           },
         },
       },
@@ -169,7 +169,7 @@ export class TeamsService {
         _count: {
           select: {
             members: true,
-            projects: true,
+            projectMemberships: true,
           },
         },
       },

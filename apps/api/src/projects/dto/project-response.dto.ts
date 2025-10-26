@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { Exclude, Expose } from 'class-transformer'
+import { Exclude, Expose, Type } from 'class-transformer'
 import { ProjectStatus } from '@prisma/client'
+import { ProjectTeamResponseDto } from './project-team-response.dto'
 
 @Exclude()
 export class ProjectResponseDto {
@@ -21,12 +22,13 @@ export class ProjectResponseDto {
   status: ProjectStatus
 
   @Expose()
-  @ApiProperty({ description: 'Team ID that owns this project' })
-  teamId: string
-
-  @Expose()
-  @ApiProperty({ description: 'Team name', required: false })
-  teamName?: string
+  @Type(() => ProjectTeamResponseDto)
+  @ApiProperty({
+    description: 'Teams associated with this project',
+    type: [ProjectTeamResponseDto],
+    required: false
+  })
+  teams?: ProjectTeamResponseDto[]
 
   @Expose()
   @ApiProperty({ description: 'Project creation timestamp' })

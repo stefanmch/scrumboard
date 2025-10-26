@@ -12,24 +12,46 @@ export class ProjectsService {
   constructor(private readonly prisma: PrismaService) {}
 
   /**
-   * Create a new project in a team
-   * User must be a member of the team
+   * Create a new project with associated teams
+   * User must be a member of at least one of the teams
    */
-  async create(teamId: string, createProjectDto: CreateProjectDto, userId: string): Promise<ProjectResponseDto> {
-    // Verify user is a team member
-    await this.verifyTeamMembership(teamId, userId)
+  async create(createProjectDto: CreateProjectDto, userId: string): Promise<ProjectResponseDto> {
+    // Extract team IDs from DTO
+    const teamIds = createProjectDto.teamIds
 
+    if (!teamIds || teamIds.length === 0) {
+      throw new ForbiddenException('At least one team must be associated with the project')
+    }
+
+    // Verify user is a member of at least one team
+    const userTeams = await this.prisma.teamMember.findMany({
+      where: {
+        userId,
+        teamId: { in: teamIds },
+      },
+    })
+
+    if (userTeams.length === 0) {
+      throw new ForbiddenException('You must be a member of at least one of the specified teams')
+    }
+
+    // Create project and associate teams
     const project = await this.prisma.project.create({
       data: {
         name: createProjectDto.name,
         description: createProjectDto.description,
         status: ProjectStatus.ACTIVE,
-        teamId,
+        teams: {
+          create: teamIds.map((teamId: string) => ({
+            teamId,
+            role: 'PRIMARY',
+          })),
+        },
       },
       include: {
-        team: {
-          select: {
-            name: true,
+        teams: {
+          include: {
+            team: true,
           },
         },
         _count: {
@@ -44,7 +66,14 @@ export class ProjectsService {
 
     return plainToInstance(ProjectResponseDto, {
       ...project,
-      teamName: project.team.name,
+      teams: project.teams.map((pt) => ({
+        id: pt.team.id,
+        name: pt.team.name,
+        description: pt.team.description,
+        role: pt.role,
+        joinedAt: pt.joinedAt,
+        memberCount: 0, // Will be populated if needed
+      })),
       storyCount: project._count.stories,
       sprintCount: project._count.sprints,
       taskCount: project._count.tasks,
@@ -52,19 +81,35 @@ export class ProjectsService {
   }
 
   /**
-   * Find all projects for a specific team
-   * User must be a member of the team
+   * Find all projects for the current user
+   * Returns projects from any team the user is a member of
    */
-  async findAllForTeam(teamId: string, userId: string): Promise<ProjectResponseDto[]> {
-    // Verify user is a team member
-    await this.verifyTeamMembership(teamId, userId)
+  async findAllForUser(userId: string): Promise<ProjectResponseDto[]> {
+    // Get all teams the user is a member of
+    const userTeams = await this.prisma.teamMember.findMany({
+      where: { userId },
+      select: { teamId: true },
+    })
 
+    const teamIds = userTeams.map((tm) => tm.teamId)
+
+    if (teamIds.length === 0) {
+      return []
+    }
+
+    // Find all projects associated with any of the user's teams
     const projects = await this.prisma.project.findMany({
-      where: { teamId },
+      where: {
+        teams: {
+          some: {
+            teamId: { in: teamIds },
+          },
+        },
+      },
       include: {
-        team: {
-          select: {
-            name: true,
+        teams: {
+          include: {
+            team: true,
           },
         },
         _count: {
@@ -83,7 +128,14 @@ export class ProjectsService {
     return projects.map((project) =>
       plainToInstance(ProjectResponseDto, {
         ...project,
-        teamName: project.team.name,
+        teams: project.teams.map((pt) => ({
+          id: pt.team.id,
+          name: pt.team.name,
+          description: pt.team.description,
+          role: pt.role,
+          joinedAt: pt.joinedAt,
+          memberCount: 0,
+        })),
         storyCount: project._count.stories,
         sprintCount: project._count.sprints,
         taskCount: project._count.tasks,
@@ -93,15 +145,15 @@ export class ProjectsService {
 
   /**
    * Find a specific project by ID
-   * User must be a member of the team that owns the project
+   * User must be a member of any team associated with the project
    */
   async findOne(projectId: string, userId: string): Promise<ProjectResponseDto> {
     const project = await this.prisma.project.findUnique({
       where: { id: projectId },
       include: {
-        team: {
-          select: {
-            name: true,
+        teams: {
+          include: {
+            team: true,
           },
         },
         _count: {
@@ -118,12 +170,19 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`)
     }
 
-    // Verify user is a member of the team that owns the project
-    await this.verifyTeamMembership(project.teamId, userId)
+    // Verify user has access through any team
+    await this.verifyProjectAccess(projectId, userId)
 
     return plainToInstance(ProjectResponseDto, {
       ...project,
-      teamName: project.team.name,
+      teams: project.teams.map((pt) => ({
+        id: pt.team.id,
+        name: pt.team.name,
+        description: pt.team.description,
+        role: pt.role,
+        joinedAt: pt.joinedAt,
+        memberCount: 0,
+      })),
       storyCount: project._count.stories,
       sprintCount: project._count.sprints,
       taskCount: project._count.tasks,
@@ -132,7 +191,7 @@ export class ProjectsService {
 
   /**
    * Update a project
-   * Only team admins can update projects
+   * Only admins of associated teams can update projects
    */
   async update(projectId: string, updateProjectDto: UpdateProjectDto, userId: string): Promise<ProjectResponseDto> {
     const project = await this.prisma.project.findUnique({
@@ -143,16 +202,16 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`)
     }
 
-    // Verify user is a team admin
-    await this.verifyTeamAdmin(project.teamId, userId)
+    // Verify user is an admin of at least one associated team
+    await this.verifyProjectAdmin(projectId, userId)
 
     const updatedProject = await this.prisma.project.update({
       where: { id: projectId },
       data: updateProjectDto,
       include: {
-        team: {
-          select: {
-            name: true,
+        teams: {
+          include: {
+            team: true,
           },
         },
         _count: {
@@ -167,7 +226,14 @@ export class ProjectsService {
 
     return plainToInstance(ProjectResponseDto, {
       ...updatedProject,
-      teamName: updatedProject.team.name,
+      teams: updatedProject.teams.map((pt) => ({
+        id: pt.team.id,
+        name: pt.team.name,
+        description: pt.team.description,
+        role: pt.role,
+        joinedAt: pt.joinedAt,
+        memberCount: 0,
+      })),
       storyCount: updatedProject._count.stories,
       sprintCount: updatedProject._count.sprints,
       taskCount: updatedProject._count.tasks,
@@ -176,7 +242,7 @@ export class ProjectsService {
 
   /**
    * Delete a project
-   * Only team admins can delete projects
+   * Only admins of associated teams can delete projects
    */
   async remove(projectId: string, userId: string): Promise<void> {
     const project = await this.prisma.project.findUnique({
@@ -187,8 +253,8 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`)
     }
 
-    // Verify user is a team admin
-    await this.verifyTeamAdmin(project.teamId, userId)
+    // Verify user is an admin of at least one associated team
+    await this.verifyProjectAdmin(projectId, userId)
 
     await this.prisma.project.delete({
       where: { id: projectId },
@@ -197,7 +263,7 @@ export class ProjectsService {
 
   /**
    * Get detailed statistics for a project
-   * User must be a member of the team that owns the project
+   * User must have access to the project
    */
   async getStats(projectId: string, userId: string): Promise<ProjectStatsResponseDto> {
     const project = await this.prisma.project.findUnique({
@@ -225,8 +291,8 @@ export class ProjectsService {
       throw new NotFoundException(`Project with ID ${projectId} not found`)
     }
 
-    // Verify user is a member of the team that owns the project
-    await this.verifyTeamMembership(project.teamId, userId)
+    // Verify user has access through any team
+    await this.verifyProjectAccess(projectId, userId)
 
     // Calculate statistics
     const totalStories = project.stories.length
@@ -257,44 +323,188 @@ export class ProjectsService {
   }
 
   /**
-   * Verify that a user is a member of a team
-   * Throws ForbiddenException if not a member
+   * Add a team to a project
+   * Only admins can add teams
    */
-  private async verifyTeamMembership(teamId: string, userId: string): Promise<void> {
-    const membership = await this.prisma.teamMember.findUnique({
+  async addTeam(projectId: string, teamId: string, userId: string): Promise<void> {
+    // Verify project exists
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    })
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`)
+    }
+
+    // Verify team exists
+    const team = await this.prisma.team.findUnique({
+      where: { id: teamId },
+    })
+
+    if (!team) {
+      throw new NotFoundException(`Team with ID ${teamId} not found`)
+    }
+
+    // Verify user is an admin of the project
+    await this.verifyProjectAdmin(projectId, userId)
+
+    // Check if team is already associated
+    const existing = await this.prisma.projectTeam.findUnique({
       where: {
-        userId_teamId: {
-          userId,
+        projectId_teamId: {
+          projectId,
           teamId,
         },
       },
     })
 
+    if (existing) {
+      throw new ForbiddenException('Team is already associated with this project')
+    }
+
+    // Add team to project
+    await this.prisma.projectTeam.create({
+      data: {
+        projectId,
+        teamId,
+      },
+    })
+  }
+
+  /**
+   * Remove a team from a project
+   * Only admins can remove teams
+   */
+  async removeTeam(projectId: string, teamId: string, userId: string): Promise<void> {
+    // Verify project exists
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+      include: {
+        teams: true,
+      },
+    })
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`)
+    }
+
+    // Verify user is an admin of the project
+    await this.verifyProjectAdmin(projectId, userId)
+
+    // Ensure at least one team remains
+    if (project.teams.length <= 1) {
+      throw new ForbiddenException('Cannot remove the last team from a project')
+    }
+
+    // Remove team from project
+    await this.prisma.projectTeam.delete({
+      where: {
+        projectId_teamId: {
+          projectId,
+          teamId,
+        },
+      },
+    })
+  }
+
+  /**
+   * Get all teams associated with a project
+   */
+  async getTeams(projectId: string, userId: string) {
+    // Verify project exists
+    const project = await this.prisma.project.findUnique({
+      where: { id: projectId },
+    })
+
+    if (!project) {
+      throw new NotFoundException(`Project with ID ${projectId} not found`)
+    }
+
+    // Verify user has access
+    await this.verifyProjectAccess(projectId, userId)
+
+    // Get all teams
+    const projectTeams = await this.prisma.projectTeam.findMany({
+      where: { projectId },
+      include: {
+        team: {
+          include: {
+            _count: {
+              select: {
+                members: true,
+              },
+            },
+          },
+        },
+      },
+    })
+
+    return projectTeams.map((pt) => ({
+      id: pt.team.id,
+      name: pt.team.name,
+      description: pt.team.description,
+      memberCount: pt.team._count.members,
+    }))
+  }
+
+  /**
+   * Verify that a user has access to a project through any associated team
+   * Throws ForbiddenException if no access
+   */
+  private async verifyProjectAccess(projectId: string, userId: string): Promise<void> {
+    // Get all teams associated with the project
+    const projectTeams = await this.prisma.projectTeam.findMany({
+      where: { projectId },
+      select: { teamId: true },
+    })
+
+    if (projectTeams.length === 0) {
+      throw new ForbiddenException('No teams are associated with this project')
+    }
+
+    const teamIds = projectTeams.map((pt) => pt.teamId)
+
+    // Check if user is a member of any of these teams
+    const membership = await this.prisma.teamMember.findFirst({
+      where: {
+        userId,
+        teamId: { in: teamIds },
+      },
+    })
+
     if (!membership) {
-      throw new ForbiddenException('You are not a member of this team')
+      throw new ForbiddenException('You do not have access to this project')
     }
   }
 
   /**
-   * Verify that a user is an admin of a team
+   * Verify that a user is an admin of at least one team associated with the project
    * Throws ForbiddenException if not an admin
    */
-  private async verifyTeamAdmin(teamId: string, userId: string): Promise<void> {
-    const membership = await this.prisma.teamMember.findUnique({
+  private async verifyProjectAdmin(projectId: string, userId: string): Promise<void> {
+    // Get all teams associated with the project
+    const projectTeams = await this.prisma.projectTeam.findMany({
+      where: { projectId },
+      select: { teamId: true },
+    })
+
+    if (projectTeams.length === 0) {
+      throw new ForbiddenException('No teams are associated with this project')
+    }
+
+    const teamIds = projectTeams.map((pt) => pt.teamId)
+
+    // Check if user is an admin of any of these teams
+    const adminMembership = await this.prisma.teamMember.findFirst({
       where: {
-        userId_teamId: {
-          userId,
-          teamId,
-        },
+        userId,
+        teamId: { in: teamIds },
+        role: 'ADMIN',
       },
     })
 
-    if (!membership) {
-      throw new ForbiddenException('You are not a member of this team')
-    }
-
-    if (membership.role !== 'ADMIN') {
-      throw new ForbiddenException('Only team admins can perform this action')
+    if (!adminMembership) {
+      throw new ForbiddenException('You must be an admin of at least one associated team to perform this action')
     }
   }
 }

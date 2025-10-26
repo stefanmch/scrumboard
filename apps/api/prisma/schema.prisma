@@ -67,7 +67,7 @@ model Team {
   creatorId String
   creator   User         @relation("TeamCreator", fields: [creatorId], references: [id])
   members   TeamMember[]
-  projects  Project[]
+  projectMemberships ProjectTeam[]
 
   @@map("teams")
 }
@@ -87,6 +87,21 @@ model TeamMember {
   @@map("team_members")
 }
 
+model ProjectTeam {
+  id        String   @id @default(cuid())
+  role      ProjectRole? // Optional role for team in project
+  joinedAt  DateTime @default(now())
+
+  // Relations
+  projectId String
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  teamId    String
+  team      Team    @relation(fields: [teamId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, teamId])
+  @@map("project_teams")
+}
+
 model Project {
   id          String        @id @default(cuid())
   name        String
@@ -96,9 +111,8 @@ model Project {
   updatedAt   DateTime      @updatedAt
 
   // Relations
-  teamId String
-  team   Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
-  tasks  Task[]
+  teams   ProjectTeam[]
+  tasks   Task[]
   stories Story[]
   sprints Sprint[]
 
@@ -451,4 +465,10 @@ enum ActionItemStatus {
   IN_PROGRESS
   COMPLETED
   CANCELLED
+}
+
+enum ProjectRole {
+  PRIMARY
+  CONTRIBUTING
+  OBSERVING
 }

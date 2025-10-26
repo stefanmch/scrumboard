@@ -53,9 +53,13 @@ async function verifyDatabaseSetup() {
 
     const teamWithProjects = await prisma.team.findFirst({
       include: {
-        projects: {
+        projectMemberships: {
           include: {
-            tasks: true
+            project: {
+              include: {
+                tasks: true
+              }
+            }
           }
         },
         members: {
@@ -67,10 +71,10 @@ async function verifyDatabaseSetup() {
     });
 
     if (teamWithProjects) {
-      console.log(`   ✅ Team relationships work: ${teamWithProjects.name} has ${teamWithProjects.projects.length} projects`);
+      console.log(`   ✅ Team relationships work: ${teamWithProjects.name} has ${teamWithProjects.projectMemberships.length} projects`);
       console.log(`   ✅ Team membership works: ${teamWithProjects.members.length} members`);
-      
-      const totalTasks = teamWithProjects.projects.reduce((sum, project) => sum + project.tasks.length, 0);
+
+      const totalTasks = teamWithProjects.projectMemberships.reduce((sum, membership) => sum + membership.project.tasks.length, 0);
       console.log(`   ✅ Project-task relationships work: ${totalTasks} total tasks across projects\n`);
     }
 
